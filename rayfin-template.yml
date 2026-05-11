@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: template
+metadata:
+    name: data-app
+    displayName: Data App
+    description: Build data analytics app based on your data in Fabric
+    version: 0.0.1
+entries:
+    - name: Data App
+      path: .
