@@ -81,7 +81,7 @@ For the `DataTable` schema and `ColumnDef` fields, see [references/data-table.md
 
 ## Spec Placement
 
-**Always define Vega-Lite specs as `.json` files in `src/queries/`, alongside their `.dax` query file** — never inline in component files. A barrel `.ts` file imports both and re-exports them. See the "Query & Spec Organization" section in `copilot-instructions.md` for the full convention.
+**Always define Vega-Lite specs as `.json` files in `src/queries/`, alongside their `.dax` query file** — never inline in component files. A barrel `.ts` file imports both and re-exports them. See the "Query & Spec Organization" section in `AGENTS.md` for the full convention.
 
 ## Custom visuals
 Always use the above mentioned ways to create visual when possible. If the user's request doesn't allow creation using the above methods, ask the user if they are ok with using another library for creating the visual. If they are ok with it, use the library to create the visual. If they are not ok with it, then build that visual from scratch using HTML, CSS, and JS/TS. Make sure to ask the user for any specific requirements they have for the visual, such as colors, labels, etc.
