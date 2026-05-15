@@ -155,10 +155,6 @@ The default `cornerRadiusEnd` is `4` (from `--radius-md`). Use `0` for sharp aes
 
 - Color-encode by type with a fixed domain/range: increase (green), decrease (red), subtotal (primary).
 
-### Line charts
-
-- Always emit both `line` and `point` encodings so data points are visible.
-
 ---
 
 ## Workarounds

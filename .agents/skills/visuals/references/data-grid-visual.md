@@ -20,35 +20,31 @@ const theme = useCssTheme();
 
 ### Custom Cell Rendering
 
-Use `cellRenderer` on a `GridColumnDef` to render non-textual content — icons, badges, progress bars, colored indicators, or any React element. The renderer receives the raw cell value and the full row object, and returns a `ReactNode`.
-
-```ts
-cellRenderer?: (value: CellValue, row: Row) => ReactNode;
-```
-
 **Key behaviors:**
 - When `cellRenderer` is set, the column's `format` string is **not** applied — the renderer receives the raw value and is responsible for its own formatting.
 - The built-in tooltip-on-truncation is disabled for custom-rendered cells — the renderer should provide its own tooltip if needed.
 
 #### Examples
 
-**Progress bar** — visualize a numeric value as a bar:
+**Data bar** — visualize a numeric value as a progress bar, scaled to the column's maximum:
 
 ```tsx
 {
-  id: "completion",
-  header: "Progress",
+  id: "revenue",
+  header: "Revenue",
   cellRenderer: (value) => {
-    const pct = typeof value === "number" ? value : 0;
+    const maxValue = 100000; // set to the column's known maximum
+    const num = typeof value === "number" ? value : 0;
+    const pct = Math.min((num / maxValue) * 100, 100);
     return (
       <div className="flex items-center gap-s">
         <div className="h-s w-full rounded-full bg-muted">
           <div
             className="h-s rounded-full bg-primary"
-            style={{ width: `${Math.min(pct, 100)}%` }}
+            style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="text-200 tabular-nums">{pct}%</span>
+        <span className="text-200 tabular-nums">{num}</span>
       </div>
     );
   },
@@ -84,5 +80,37 @@ import { Check, X } from "lucide-react";
   header: "Verified",
   cellRenderer: (value) =>
     value ? <Check className="icon-size-200 text-green-600" /> : <X className="icon-size-200 text-red-500" />,
+}
+```
+
+**Clickable URL** — use when the column value is a URL the user should navigate to (e.g. a reference link, document, or external page). Renders as clickable text:
+
+```tsx
+{
+  id: "website",
+  header: "Website",
+  cellRenderer: (value) => {
+    const href = typeof value === "string" ? value : "";
+    return href ? (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-foreground underline">
+        {href}
+      </a>
+    ) : null;
+  },
+}
+```
+
+**Image cell** — use when the column value is a URL pointing to an image meant for visual display (e.g. a photo, avatar, or product image). Renders a thumbnail; clicking opens a lightbox overlay. Use `ImageCell` from `@microsoft/fabric-datagrid`:
+
+```tsx
+import { ImageCell } from "@microsoft/fabric-datagrid";
+
+{
+  id: "photo",
+  header: "Photo",
+  cellRenderer: (value) => {
+    const src = typeof value === "string" ? value : "";
+    return src ? <ImageCell src={src} alt="Photo" /> : null;
+  },
 }
 ```

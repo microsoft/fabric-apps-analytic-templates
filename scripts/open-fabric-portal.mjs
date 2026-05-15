@@ -57,6 +57,11 @@ const url = `${portal}/groups/${ws}/appbackends/${item}?experience=power-bi&devU
 console.log(`Opening Fabric portal embed → ${url}`);
 console.log('First run: sign in to Microsoft when prompted; cookies persist for the next run.');
 
-const args = ['-s=fabric', 'open', '--persistent', '--config=.playwright-config.json', url];
+// shell:true is required on Windows so Node can resolve the playwright-cli .cmd shim
+// through cmd.exe's PATHEXT lookup.  However cmd.exe treats & as a command separator,
+// so any URL arg that contains & (e.g. ?experience=power-bi&devUri=…) must be wrapped
+// in double-quotes to be passed as a single token.  Both cmd.exe and sh honour this.
+const quoteForShell = (arg) => `"${arg}"`;
+const args = ['-s=fabric', 'open', '--persistent', '--config=.playwright-config.json', quoteForShell(url)];
 const child = spawn('playwright-cli', args, { stdio: 'inherit', shell: true });
 child.on('exit', (code) => process.exit(code ?? 0));

@@ -34,8 +34,14 @@ The base Vega-Lite theme includes a 10-color categorical palette. These colors a
 
 ### Line Chart
 
-- Emit an encoding for both `line` and `point`.
-- **Dual Y-axis**: When using `resolve: { scale: { y: "independent" } }`, wrap each series' `line` and `point` marks in their own nested `layer` so the top-level layer count equals the number of Y-axes.
+- By default, just emitting a `line` encoding is sufficient.  Only if the user requests "markers" for their line charts should both `line` and `point` encodings be emitted.
+- **Do not set `interpolate` on `line` or `area` marks** unless the user explicitly requests it.
+- **Dual Y-axis**: When using `resolve: { scale: { y: "independent" } }`, wrap each series' `line` (and `point`, if needed) marks in their own nested `layer` so the top-level layer count equals the number of Y-axes.
+
+## Area Chart
+
+- By default, ensure that the `line` property of the area mark is enabled to reinforce that the line data represents the top of the shown area.
+- Do NOT set `opacity` or `fillOpacity` on area marks.
 
 ### Bar Chart
 
