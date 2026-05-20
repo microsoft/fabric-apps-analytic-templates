@@ -114,3 +114,23 @@ import { ImageCell } from "@microsoft/fabric-datagrid";
   },
 }
 ```
+
+**Cell tooltip** — use `CellTooltip` when a `cellRenderer` needs a tooltip:
+
+```tsx
+import { CellTooltip } from "@microsoft/fabric-datagrid";
+
+{
+  id: "name",
+  header: "Name",
+  cellRenderer: (value, row) => {
+    const name = String(value ?? "");
+    const detail = String(row["email"] ?? "");
+    return (
+      <CellTooltip content={<div className="rounded-xl border bg-popover p-l shadow-lg"><p>{name}</p><p>{detail}</p></div>}>
+        <span>{name}</span>
+      </CellTooltip>
+    );
+  },
+}
+```
