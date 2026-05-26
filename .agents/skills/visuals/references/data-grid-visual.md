@@ -8,7 +8,7 @@ Refer to the package README.md for detailed information about the component api 
 
 ### Theming
 
-Pass the `theme` prop to render correctly in both light and dark modes. Use the `useCssTheme()` hook from `@microsoft/fabric-visuals` — it derives the theme from `--color-*` CSS variables in `global.css` and updates automatically when the theme changes:
+Pass the `theme` prop to render correctly in both light and dark modes. Use the `useCssTheme()` hook from `@microsoft/fabric-visuals` — it derives the theme from `--color-*` CSS variables on the page and updates automatically when the theme changes:
 
 ```tsx
 import { useCssTheme } from "@microsoft/fabric-visuals";
@@ -23,6 +23,7 @@ const theme = useCssTheme();
 **Key behaviors:**
 - When `cellRenderer` is set, the column's `format` string is **not** applied — the renderer receives the raw value and is responsible for its own formatting.
 - The built-in tooltip-on-truncation is disabled for custom-rendered cells — the renderer should provide its own tooltip if needed.
+- Every `GridColumnDef.id` must correspond to a column in the `DataTable`.
 
 #### Examples
 
@@ -55,10 +56,10 @@ const theme = useCssTheme();
 
 ```tsx
 {
-  id: "employee",
+  id: "name",
   header: "Employee",
-  cellRenderer: (_value, row) => {
-    const name = String(row["name"] ?? "");
+  cellRenderer: (value, row) => {
+    const name = String(value ?? "");
     const role = String(row["role"] ?? "");
     return (
       <div className="flex flex-col leading-tight">

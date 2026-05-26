@@ -59,12 +59,16 @@ The base Vega-Lite theme includes a 10-color categorical palette. These colors a
 
 - No extra encodings needed.
 
+## Zero Baseline
+
+- Default to `scale: { zero: false }` on quantitative Y encodings so the axis fits the data.
+- **Exception**: Do not set `zero: false` on bar/column charts.
+
 ## General Guidelines
 
-- Avoid additional customization to encodings.
+- Use only the encoding channels the chart-specific rule calls for. Don't override theme-controlled properties.
 - When highlighting specific data points or series, non-highlighted shapes should have `fillOpacity: 0.35`.
 - For line charts, both the line and associated points should have `opacity: 0.35`.
-
 
 ## Shared Visual Theme
 
@@ -110,9 +114,9 @@ Or set `config` directly in the `.json` spec file for structural overrides (not 
 
 ### Changing visual styling globally
 
-Edit the CSS custom properties in `src/global.css`. These cascade to all charts, grids, and UI components automatically. Light-mode values go in the `@theme` block; dark-mode overrides go in the `.dark` block.
+The visual components read their styling from CSS custom properties on the page. Override these properties in your project's stylesheet to change the look of all charts, grids, and UI components at once. Light-mode values go in the base scope; dark-mode overrides go in a `.dark` selector.
 
-| What to change | CSS variable(s) in `global.css` |
+| What to change | CSS variable(s) |
 |---|---|
 | Colors | `--color-foreground`, `--color-background`, `--color-brand-*`, etc. |
 | Font family | `--font-base`, `--font-monospace` |

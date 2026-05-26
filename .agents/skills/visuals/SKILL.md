@@ -1,6 +1,10 @@
 ---
 name: visuals
-description: Use when user wants to incorporate charts, graphs, data grid, or other visual representations of data into their project.
+description: >
+  Use when user wants to incorporate charts, graphs, data grid, 
+  or other visual representations of data into their project.
+  Use VegaVisual and DataGrid components to create these visuals, 
+  utilizing the shared data types, formatting, theme, and interactivity hooks.
 ---
 
 # Visuals
@@ -25,44 +29,26 @@ The `DataTable` type (used by both components) is defined in `@microsoft/fabric-
 ## Data Format
 The chart and data grid components share a unified `data` prop of type `DataTable` (from `@microsoft/fabric-visuals-core`). This structured format carries column metadata (`displayName`, `format`, `semanticType`) that the components use for axis titles, grid headers, number formatting, and tooltips.
 
-**Power BI query results → `data` prop** (standard pattern): use `toDataTable()` from `@/lib/to-data-table` to convert SDK results into a `DataTable`, then pass it via the `data` prop. The `DataTable` carries column metadata that the visual uses for formatting.
+**Using `DataTable`**: Pass a `DataTable` via the `data` prop. The visual uses its column metadata for formatting, axis titles, and tooltips.
 
-**Static/inline data → `data` in spec**: for static data, transformed data, or plain arrays, put `data: { values: [...] }` directly in the Vega-Lite spec and omit the `data` prop.
+**Static/inline data**: For static data, transformed data, or plain arrays, put `data: { values: [...] }` directly in the Vega-Lite spec and omit the `data` prop.
+
+**Multiple tables in one visual**: the `data` prop also accepts a `Record<string, DataTable>` for specs that need to reference more than one dataset by name. See [references/multi-data-input.md](references/multi-data-input.md) for the syntax and caveats.
 
 ```tsx
-import { revenueByRegion } from "@/queries/sales/revenue-by-region";
-import { toDataTable } from "@/lib/to-data-table";
-import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
 import { DataGrid } from "@microsoft/fabric-datagrid";
+import type { DataTable } from "@microsoft/fabric-visuals-core";
 
-// Call the factory function — optionally pass semantic filters
-const { connection, query, columnMetadata, vegaLiteSpec } = revenueByRegion();
-const { data } = useSemanticModelQuery({ connection, query });
-
-// useCssTheme() reads --color-* vars from global.css and updates automatically
+// useCssTheme() reads --color-* vars from the page and updates automatically
 // when the theme changes (e.g. dark-mode toggle adds/removes the .dark class).
 const theme = useCssTheme();
 
-if (data?.status === "success") {
-  const dataTable = toDataTable(data.table, columnMetadata);
+// Charts — pass a DataTable and Vega-Lite spec
+<VegaVisual spec={vegaLiteSpec} data={dataTable} theme={theme} />
 
-  // Charts — metadata flows to axis titles, tooltips, formatting
-  <VegaVisual spec={vegaLiteSpec} data={dataTable} theme={theme} />
-
-  // Grids — displayName becomes column headers, format applies to cells
-  <DataGrid data={dataTable} theme={theme} />
-}
-
-// With parameters — each factory function defines its own parameter shape
-const viz = revenueByRegion({
-  categories: ["Electronics"],
-  minRevenue: 1000,
-});
-const { data: filtered } = useSemanticModelQuery({
-  connection: viz.connection,
-  query: viz.query,
-});
+// Grids — displayName becomes column headers, format applies to cells
+<DataGrid data={dataTable} theme={theme} />
 
 // Static/inline data — no data prop needed
 const inlineSpec = {
@@ -79,13 +65,36 @@ For the `DataTable` schema and `ColumnDef` fields, see [references/data-table.md
 ## Formatting & Theme
 - **Formatting rules**: Number formatting, color palettes, chart-specific encoding rules, highlighting guidelines, and a default theme. See [references/formatting.md](references/formatting.md).
 
-## Spec Placement
-
-**Always define Vega-Lite specs as `.json` files in `src/queries/`, alongside their `.dax` query file** — never inline in component files. A barrel `.ts` file imports both and re-exports them. See the "Query & Spec Organization" section in `AGENTS.md` for the full convention.
-
 ## Custom visuals
 Always use the above mentioned ways to create visual when possible. If the user's request doesn't allow creation using the above methods, ask the user if they are ok with using another library for creating the visual. If they are ok with it, use the library to create the visual. If they are not ok with it, then build that visual from scratch using HTML, CSS, and JS/TS. Make sure to ask the user for any specific requirements they have for the visual, such as colors, labels, etc.
 
 ## Container Layout
 
 - **`DataGrid`** — the direct parent must apply `overflow-auto` so content remains scrollable when it exceeds the container bounds (many rows).
+
+## Interactivity
+
+Both `VegaVisual` and `DataGrid` expose an `onInteraction` prop that emits structured, predicate-based events when the user clicks a data point or row. Use it to wire cross-component interactions.
+
+```tsx
+import type { InteractionEvent } from "@microsoft/fabric-visuals-core";
+
+function handleInteraction(source: string, events: InteractionEvent[]) {
+    for (const event of events) {
+        if (event.action === "select") {
+            // event.selections describes the clicked data as predicates
+        } else if (event.action === "clear") {
+            // user deselected (re-clicked same item or clicked empty space)
+        }
+    }
+}
+
+<VegaVisual spec={spec} data={dataTable} theme={theme}
+    onInteraction={(events) => handleInteraction("salesChart", events)} />
+<DataGrid data={dataTable} theme={theme}
+    onInteraction={(events) => handleInteraction("detailTable", events)} />
+```
+**Key concepts**:
+- Clicking a different data point emits a new `select` (replaces the prior selection — no preceding `clear`).
+- Re-clicking the same item or background space in a vega-lite visual emits `clear`.
+- Predicates include all fields from the datum; consumers filter to the ones that are relevant to them.

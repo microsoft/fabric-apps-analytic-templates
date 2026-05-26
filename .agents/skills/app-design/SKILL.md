@@ -1,6 +1,9 @@
 ---
 name: app-design
-description: Use when building or modifying the app layout, creating UI components, or making any visual design decisions. Ensures consistency, accessibility, and a polished, unique app.
+description: >
+  Use when building or modifying the app layout, 
+  creating UI components, or making any visual design decisions. 
+  Ensures consistency, accessibility, and a polished, unique app.
 ---
 
 # App Design
@@ -85,6 +88,32 @@ Every component that depends on async data should handle all three states:
 ### Dark Mode
 
 Include a light/dark mode toggle in the app header or toolbar. Use the `useAppTheme` hook from `@/hooks/use-theme` to read and toggle the theme.
+
+---
+
+## Coding Conventions
+
+- **Styling**: Tailwind CSS v4 utility classes for all styling. Theme colors are defined as CSS custom properties in `src/global.css` using `@theme`. Use Tailwind classes directly in JSX.
+- **Theming**: Light/dark color tokens defined in `src/global.css` via CSS custom properties. Dark mode uses the `.dark` class on the root `html` element, auto-detected via `prefers-color-scheme`, `data-appearance` attribute, or `.dark` class. The `useAppTheme` hook in `src/hooks/use-theme.ts` manages the toggle.
+- **CSS class merging**: Use `cn()` from `@/lib/utils` (powered by `clsx` + `tailwind-merge`) to conditionally combine Tailwind class names.
+- **Icons**: Lucide React for UI icons.
+- **UI Components**: Use Radix primitives with Tailwind CSS styling for all interactive elements — buttons, inputs, dialogs, menus, tabs, etc.
+
+### UI Token Rules
+
+All styling must use the design tokens defined in `src/global.css` via Tailwind utility classes. Never hardcode raw color values, pixel sizes, or font stacks — raw values are only permitted in `global.css` where the tokens are defined. Refer to `global.css` for available tokens, their values, and expected usage.
+
+Examples:
+- `bg-primary text-primary-foreground` — not `bg-blue-600 text-white`
+- `text-300` — not `text-sm` or `text-[14px]`
+- `p-l gap-m` — not `p-4`, `gap-3`, `p-spacing-l`, or `gap-spacing-m`
+- `font-semibold` — not `font-[600]`
+- `rounded-xl` — not `rounded-[8px]`
+- `icon-size-200` — not `w-4 h-4`
+
+**`cn()` and tailwind-merge conflicts:** `tailwind-merge` treats `text-*` utilities as one conflict group. In `cn()`, combining text size and text color with ambiguous `text-*` classes can drop one class. Prefer explicit length syntax for font size (e.g., `text-[length:var(--text-300)]`) when combining with text color classes inside `cn()`. If classes are static and not merged, `text-300 text-foreground` is acceptable.
+
+**Form element font inheritance:** Native form controls may not inherit the page font family by default. Ensure base styles in `global.css` set `font-family: inherit` for `select`, `input`, `textarea`, and `button`.
 
 ---
 
