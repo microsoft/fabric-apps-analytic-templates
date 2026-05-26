@@ -66,26 +66,19 @@ new FabricClient({
 
 ### Managing Connections
 
-Use the `fabric-app-data` CLI to manage connections in a `fabric.yaml` file.
-This keeps workspace/item IDs out of your source code and supports
-multiple profiles (dev, staging, production).
-
-**Recommended workflow:**
-
-1. `npx fabric-app-data init` — create `fabric.yaml`
-2. `npx fabric-app-data add` — add connections (by IDs or Fabric portal URL)
-3. `npx fabric-app-data generate -o src/fabric.generated.ts` — codegen a TypeScript config file
-4. Import the generated config in your app
+The `FabricClient` accepts connection config as a plain object. How you
+manage those IDs (environment variables, config files, codegen) is up to
+your project. The only requirement is that `workspaceId` and `itemId`
+are provided for each named connection.
 
 ```typescript
-import { fabricConfig } from "./fabric.generated.js";
-
-const client = new FabricClient({ proxy, ...fabricConfig });
+const client = new FabricClient({
+  proxy,
+  semanticModels: {
+    sales: { workspaceId: "00c98f7c-...", itemId: "03f2dc11-..." },
+  },
+});
 ```
-
-Run `npx fabric-app-data generate -o src/fabric.generated.ts` whenever `fabric.yaml` changes.
-
-For full CLI documentation, load the **fabric-cli** skill.
 
 ### Querying
 
@@ -184,7 +177,7 @@ Services semantic models, where datetimes are timezone-unaware.
 "2023-06-01T00:00:00.000"
 ```
 
-This format is directly compatible with Vega-Lite's `temporal` encoding type
+This format is directly usable as a `temporal` type in charting libraries
 and ensures consistent display across all browser timezones. The JSON and
 Arrow protocols both return the same format.
 

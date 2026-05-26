@@ -78,10 +78,6 @@ When you need multiple marks (e.g., bars with text labels), put **all** marks in
 1. **Never combine `mark` with `layer`** at the same level.
 2. **Each layer entry must define a valid spec at its own level** — it may be a unit spec with its own `mark` (and optional `encoding`), or a nested composition such as another `layer` spec.
 
-## Column name and encoding rules
-
-**Always** use the column names from semantic query in the vega-lite spec. Those column names will contain characters like '[' and ']' that are not compatible with vega lite encodings. Vega-lite spec that contains field references with such characters (eg: [Name] or Customer[Name]) **should always escape these characters wherever used** (eg: \\[Name\\] and Customer\\[Name\\]). In addition, specify a clean title/displayName for such columns names (eg: Customer Name).
-
 ## Props
 
 Refer to the package README.md for detailed information about the component api including exported types, functions, and properties.

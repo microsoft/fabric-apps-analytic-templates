@@ -119,22 +119,23 @@ export function revenueTrend(params?: { granularity?: Granularity }) {
 }
 ```
 
-**Consumer examples:**
-```tsx
-import { revenueByRegion } from "@/queries/sales/revenue-by-region";
+#### Column Metadata
 
-// No params — returns the base query and spec as-is
-const { connection, query, columnMetadata, vegaLiteSpec } = revenueByRegion();
+Capture column metadata in the barrel `.ts` file as a `columnMetadata: ColumnMetadataMap` constant (import `ColumnMetadataMap` from `@/lib/to-data-table`). The dictionary **must be keyed by the exact column name from the CLI query output** (the `name` field in `table.columns`). Do not guess or clean these keys — copy them verbatim from the query result. Each value is a `ColumnDef` (from `@microsoft/fabric-visuals-core`) containing:
+  - `name` — a cleaned-up identifier derived from the original column name by removing `.`, `[`, `]`, `\`, `"`, and `'` characters. E.g., `"Products[Region]"` → `"ProductsRegion"`, `"[Total Revenue]"` → `"Total Revenue"` — to be used when building visual specs.
+  - `displayName` — a human-readable label sourced from the semantic model schema (e.g., `"Region"`, `"Total Revenue"`). Used for axis titles, grid headers, and tooltips.
+  - `format` — a VBA/ECMA-376 format string for number/date formatting (e.g., `#,##0.00`, `0.00%`, and `mm/dd/yyyy`). Omit for text type columns.
 
-// With parameters
-const viz = revenueByRegion({
-  categories: ["Electronics", "Clothing"],
-  minRevenue: 500,
-});
-const { data } = useSemanticModelQuery({ connection: viz.connection, query: viz.query });
+**Example workflow:** Run `npx fabric-app-data query myModel --query '<DAX>'`, observe the output columns are `[SalesPersonID]` and `[Name]`, then use those exact strings as metadata keys:
+```ts
+export const columnMetadata: ColumnMetadataMap = {
+  "[SalesPersonID]": { name: "SalesPersonID", displayName: "Sales Person ID" },
+  "[Name]": { name: "Name", displayName: "Name" },
+};
 ```
 
-**Key rules:**
+#### Key rules
+
 - **All DAX lives in `.dax` files.** Never inline full DAX query strings in `.ts` factory files. If a parameter changes the query structure, create a separate `.dax` file for each variant and select the right one in the factory function. Small modifications — such as replacing filter value placeholders, wrapping the query with `CALCULATETABLE` to apply filters, or substituting a column reference — are acceptable in `.ts`, but the base query must always come from a `.dax` import.
 - **Name files after the visualization they drive.** Use kebab-case base names (e.g., `revenue-by-region.dax`, `revenue-by-region.json`, `revenue-by-region.ts`). Variant `.dax` files append a suffix (e.g., `revenue-trend-yearly.dax`, `revenue-trend-quarterly.dax`).
 - **Use `.dax` for queries.** Plain-text DAX files keep queries readable and diff-friendly. Import them with Vite's `?raw` suffix.
@@ -145,45 +146,11 @@ const { data } = useSemanticModelQuery({ connection: viz.connection, query: viz.
 
 ## Testing & Spec Files
 
-Add spec files alongside source files as needed — for components, hooks, utilities, and query factory functions. Co-locate each spec file with the file it tests
-
-**When to add spec files:**
-- **Always** for pure utility functions in `src/lib/` — these are easiest to unit-test and most likely to have edge cases.
-- **Always** for query factory functions in `src/queries/` — verify that parameter combinations produce the correct query string, column metadata, and spec modifications.
-- **As needed** — for hooks, test state transitions, returned values, and side effects using a React hooks testing library.
-- **As needed** — for components, add spec files when the component contains non-trivial logic (e.g., conditional rendering, derived state, error states). Simple presentational components with no logic do not need a spec file.
-
-**Key rules:**
-- Never create a spec file just to satisfy coverage targets. Write tests only when they document expected behavior or guard against regressions.
-- Tests must not use mock or hardcoded data to stand in for real query results — use representative fixture data that matches the real column shape.
-- Keep each spec focused on one unit; do not write integration tests that span multiple layers.
+See the [app-validation](.agents/skills/app-validation/SKILL.md) skill for when and how to write spec files.
 
 ## Key Conventions
 
-- **Path alias**: `@/` maps to `src/` (configured in both `tsconfig.json` and `vite.config.ts`)
-- **Styling**: Tailwind CSS v4 utility classes for all styling. Theme colors are defined as CSS custom properties in `src/global.css` using `@theme`. Use Tailwind classes directly in JSX.
-- **Theming**: Light/dark color tokens defined in `src/global.css` via CSS custom properties. Dark mode uses the `.dark` class on the root `html` element, auto-detected via `prefers-color-scheme`, `data-appearance` attribute, or `.dark` class. The `useAppTheme` hook in `src/hooks/use-theme.ts` manages the toggle.
-- **CSS class merging**: Use `cn()` from `@/lib/utils` (powered by `clsx` + `tailwind-merge`) to conditionally combine Tailwind class names.
-- **Icons**: Lucide React for UI icons.
-- **UI Components**: Use Radix primitives with Tailwind CSS styling for all interactive elements — buttons, inputs, dialogs, menus, tabs, etc.
-- **Error handling**: App is wrapped in `react-error-boundary`.
-- **TypeScript**: `strict` mode enabled.
-
-### UI Token Rules
-
-All styling must use the design tokens defined in `src/global.css` via Tailwind utility classes. Never hardcode raw color values, pixel sizes, or font stacks — raw values are only permitted in `global.css` where the tokens are defined. Refer to `global.css` for available tokens, their values, and expected usage.
-
-Examples:
-- `bg-primary text-primary-foreground` — not `bg-blue-600 text-white`
-- `text-300` — not `text-sm` or `text-[14px]`
-- `p-l gap-m` — not `p-4`, `gap-3`, `p-spacing-l`, or `gap-spacing-m`
-- `font-semibold` — not `font-[600]`
-- `rounded-xl` — not `rounded-[8px]`
-- `icon-size-200` — not `w-4 h-4`
-
-**`cn()` and tailwind-merge conflicts:** `tailwind-merge` treats `text-*` utilities as one conflict group. In `cn()`, combining text size and text color with ambiguous `text-*` classes can drop one class. Prefer explicit length syntax for font size (e.g., `text-[length:var(--text-300)]`) when combining with text color classes inside `cn()`. If classes are static and not merged, `text-300 text-foreground` is acceptable.
-
-**Form element font inheritance:** Native form controls may not inherit the page font family by default. Ensure base styles in `global.css` set `font-family: inherit` for `select`, `input`, `textarea`, and `button`.
+See the [app-design](.agents/skills/app-design/SKILL.md) skill for styling conventions, UI token rules, theming, and component standards.
 
 ## Recommended Workflow
 
@@ -202,7 +169,7 @@ The workflow has three distinct phases:
    - **Search the Power BI Service** for a semantic model by name (you will search on their behalf), or
    - **Provide a specific online model** directly (workspace ID + dataset ID, or a Power BI / Fabric URL).
 
-Once the user confirms a published semantic model, read the [data-discovery](.agents/skills/data-discovery/SKILL.md) skill to progressively discover schema metadata as needed — do not fetch the full schema upfront.
+Once the user confirms a published semantic model, read the [schema-discovery](.agents/skills/schema-discovery/SKILL.md) skill to progressively discover schema metadata as needed — do not fetch the full schema upfront.
 
 Once the model is identified, register it as a connection using the Fabric CLI (see the [fabric-cli](.agents/skills/fabric-cli/SKILL.md) skill for full command reference):
 ```bash
@@ -222,7 +189,7 @@ Test with: `npx fabric-app-data query <alias> --query "EVALUATE ROW(\"test\", 1)
 
 ### 3. Write and test DAX queries (authoring phase)
 
-Follow the [data-discovery](.agents/skills/data-discovery/SKILL.md) skill to write and test DAX queries. The skill covers progressive schema discovery, DAX query authoring, and time intelligence.
+Follow the [dax-authoring](.agents/skills/dax-authoring/SKILL.md) skill to write and test DAX queries. The skill covers DAX syntax rules, query patterns, time intelligence, and an iterative test workflow. Use the [schema-discovery](.agents/skills/schema-discovery/SKILL.md) skill to progressively discover model metadata as needed.
 
 Use `npx fabric-app-data query <alias> --query '<DAX>'` to test queries. This runs the query through the same SDK pipeline used at runtime, so the results (column names, data types, row structure) are identical to what the app will produce. If a `--query` command fails due to shell escaping issues with special characters, write the query to a `.dax` file and retry with `--file` instead.
 
@@ -230,11 +197,11 @@ Iterate on queries until they return the expected columns and data shape.
 
 **Tip:** Delegate query exploration to a sub-agent. It can discover the schema, draft queries, and test them in parallel while you plan the component structure.
 
-Once queries are validated, **promote them to the app:**
-1. Save each query as a `.dax` file in `src/queries/` following the "Query & Spec Organization" convention above.
-2. **Capture column metadata** — copy the exact column names from the query output (`table.columns[].name` values) as dictionary keys. For each column, record its `name` (a cleaned-up identifier with `.`, `[`, `]`, `\`, `"`, and `'` characters removed from the original column name), `displayName` (human-readable label from the model schema), and `format` (VBA/ECMA-376 format string). Define this as a `columnMetadata: ColumnMetadataMap` constant in the barrel `.ts` file, keyed by the **exact original column name from the query result** (e.g., `"[SalesPersonID]"`, not `"SalesPersonID"`). `ColumnMetadataMap` is `Record<string, ColumnDef>` where `ColumnDef` comes from `@microsoft/fabric-visuals-core`.
+Once queries are validated, **promote them to the app** following the [Query & Spec Organization](#query--spec-organization) conventions above:
+1. Save each query as a `.dax` file in `src/queries/` following the naming and grouping conventions.
+2. **Capture column metadata** — copy the exact column names from the query output as dictionary keys in a `columnMetadata: ColumnMetadataMap` constant. See the conventions above for the full format and rules.
 3. Create the corresponding `.json` Vega-Lite spec — refer to [visuals](.agents/skills/visuals/SKILL.md). Use the cleaned `name` values from the metadata for Vega-Lite field encodings (they are already free of characters that require escaping). Use `displayName` values for axis titles, legend labels, and tooltip headers. Use `format` values for axis/tooltip formatting.
-4. Create the barrel `.ts` file with a **factory function** (camelCase of the file name) that accepts optional use-case-specific parameters and returns `{ connection, query, columnMetadata, vegaLiteSpec }`. The parameter types are defined per barrel — design them for the specific visualization's needs.
+4. Create the barrel `.ts` file with a **factory function** that returns `{ connection, query, columnMetadata, vegaLiteSpec }`.
 
 ### 4. UX Design for the app
 
@@ -242,11 +209,62 @@ Principles for overall aesthetics, theming, layout, and accessibility requiremen
 
 ### 5. Build components with data (app code phase)
 
-Follow the [data-fetching](.agents/skills/data-fetching/SKILL.md) skill to wire queries to React components. Use the `useSemanticModelQuery` hook from `src/hooks/use-semantic-model-query.ts` — components call the factory functions from `src/queries/` and destructure `{ connection, query, columnMetadata, vegaLiteSpec }` from the result.
+Use the `useSemanticModelQuery` hook from `src/hooks/use-semantic-model-query.ts` — components call the factory functions from `src/queries/` and destructure `{ connection, query, columnMetadata, vegaLiteSpec }` from the result.
 
 Use `toDataTable()` from `src/lib/to-data-table.ts` to convert the SDK's `QueryTable` (from `data.table`) into a `DataTable` by merging it with the `columnMetadata` from the factory function result. This applies everywhere the data is consumed like rendering in `VegaVisual` or `DataGrid` (pass the `DataTable` via their `data` prop), displaying values in custom components, or any other usage.
 
 `VegaVisual` and `DataGrid` components should call factory functions for query + spec + columnMetadata — never define specs inline in component files. Refer to the [visuals](.agents/skills/visuals/SKILL.md) skill when building them.
+
+#### Example
+
+```tsx
+import { revenueByRegion } from "@/queries/sales/revenue-by-region";
+import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
+import { toDataTable } from "@/lib/to-data-table";
+import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
+import { DataGrid } from "@microsoft/fabric-datagrid";
+
+function RevenueByRegionChart() {
+  const theme = useCssTheme();
+  const { connection, query, columnMetadata, vegaLiteSpec } = revenueByRegion({
+    categories: ["Category A"],
+  });
+
+  const { data, isLoading, error } = useSemanticModelQuery({
+    connection,
+    query,
+  });
+
+  if (isLoading) return <LoadingSpinner />;
+
+  // The SDK never throws — errors are returned in the result status.
+  // Check data.status to handle query failures (auth errors, invalid DAX, etc.).
+  if (data?.status === "error") {
+    return <ErrorMessage message={data.error.message} />;
+  }
+
+  if (data?.status !== "success") return null;
+
+  // Convert the SDK's QueryTable into a DataTable enriched with column metadata.
+  // toDataTable merges data.table with columnMetadata so that display names,
+  // format strings, and cleaned field names are available to visuals.
+  const dataTable = toDataTable(data.table, columnMetadata);
+
+  // Pass the DataTable to VegaVisual (chart) or DataGrid (table) via the data prop.
+  return (
+    <div>
+      <VegaVisual spec={vegaLiteSpec} data={dataTable} theme={theme} />
+      <DataGrid data={dataTable} theme={theme} />
+    </div>
+  );
+}
+```
+
+**Caching:** Query results are cached automatically by the SDK's built-in LRU cache. Subsequent calls with the same connection + query return cached data instantly. To force a fresh fetch, pass `bypassCache: true` to `useSemanticModelQuery`. To programmatically clear the cache (e.g., after a known data refresh), call `clearQueryCache("salesModel")` for a specific model or `clearQueryCache()` for all models.
+
+**Error handling:** The SDK never throws on query failures — errors are returned as `data.status === "error"` with details in `data.error.message` (e.g., `"401 Unauthorized"`, invalid DAX syntax). Check `data.status` before accessing `data.table`. Network-level errors that prevent the SDK call itself are surfaced via the `error` field returned by the hook.
+
+For deeper details on the SDK client, caching internals, and advanced query options, refer to the [fabric-sdk](.agents/skills/fabric-sdk/SKILL.md) skill.
 
 ### 6. Final validation
 
@@ -259,5 +277,5 @@ Follow the [app-validation](.agents/skills/app-validation/SKILL.md) skill (what 
 3. **Do not assume a data source.** Always confirm with the user first.
 4. **Never guess query result schema (e.g. column names).** Always run the query with `npx fabric-app-data query` first and use the exact column names from the output as metadata keys. The CLI output is identical to what the app receives at runtime.
 5. **Do not use any data source without explicit user consent.** If any required data has not already been provided or consented to by the user, **stop and ask the user** before using any additional data sources. This includes (but is not limited to) additional Power BI semantic models and non-Power BI external sources (web search, web APIs, public datasets, scraped web content, or any non-Power BI data). Never silently supplement user-provided data with additional sources.
-6. **Do not ask the user to describe the data schema.** Use DAX INFO functions via `fabric-app-data query` to discover metadata progressively. Refer to the [data-discovery](.agents/skills/data-discovery/SKILL.md) skill for discovery query patterns.
+6. **Do not ask the user to describe the data schema.** Use DAX INFO functions via `fabric-app-data query` to discover metadata progressively. Refer to the [schema-discovery](.agents/skills/schema-discovery/SKILL.md) skill for discovery query patterns.
 7. **ALWAYS run browser validation after UI changes.** Read the [app-validation](.agents/skills/app-validation/SKILL.md) skill. Do NOT skip any validation steps in favor of brevity.

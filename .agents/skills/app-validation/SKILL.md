@@ -1,6 +1,10 @@
 ---
 name: app-validation
-description: What to validate and how to drive Playwright for this template's app. Use alongside the playwright-cli skill — playwright-cli covers the tool's commands; this skill covers performance rules, the required validation checklist, and the Fabric portal embed flow.
+description: >
+  What to validate and how to drive Playwright for this template's app. 
+  Use alongside the playwright-cli skill — playwright-cli covers the tool's 
+  commands; this skill covers performance rules, the required validation checklist, 
+  the Fabric portal embed flow, and spec file guidance.
 ---
 
 # App Validation
@@ -97,3 +101,18 @@ If `blockedByLNA: true`, the Chromium flag isn't taking effect — confirm `--co
 The Fabric portal emits its own errors that are **not app bugs**. Treat as portal noise (ignore) - only errors where the source URL starts with `http://localhost:5173` count as app errors.
 
 See [`references/fabric-embed.md`](references/fabric-embed.md) for the full frame walker, `classifyConsoleMessages` helper, and troubleshooting matrix.
+
+## Spec Files
+
+Add spec files alongside source files as needed — for components, hooks, utilities, and query factory functions. Co-locate each spec file with the file it tests.
+
+**When to add spec files:**
+- **Always** for pure utility functions in `src/lib/` — these are easiest to unit-test and most likely to have edge cases.
+- **Always** for query factory functions in `src/queries/` — verify that parameter combinations produce the correct query string, column metadata, and spec modifications.
+- **As needed** — for hooks, test state transitions, returned values, and side effects using a React hooks testing library.
+- **As needed** — for components, add spec files when the component contains non-trivial logic (e.g., conditional rendering, derived state, error states). Simple presentational components with no logic do not need a spec file.
+
+**Key rules:**
+- Never create a spec file just to satisfy coverage targets. Write tests only when they document expected behavior or guard against regressions.
+- Tests must not use mock or hardcoded data to stand in for real query results — use representative fixture data that matches the real column shape.
+- Keep each spec focused on one unit; do not write integration tests that span multiple layers.
