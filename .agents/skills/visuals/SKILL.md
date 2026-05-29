@@ -74,7 +74,9 @@ Always use the above mentioned ways to create visual when possible. If the user'
 
 ## Interactivity
 
-Both `VegaVisual` and `DataGrid` expose an `onInteraction` prop that emits structured, predicate-based events when the user clicks a data point or row. Use it to wire cross-component interactions.
+Both `VegaVisual` and `DataGrid` expose an `onInteraction` prop that emits structured, predicate-based events when the user clicks a data point or row.
+
+**Always use the `onInteraction` prop** on `VegaVisual` and `DataGrid` to handle user interactions such as selections, cross-highlighting, and cross-filtering.
 
 ```tsx
 import type { InteractionEvent } from "@microsoft/fabric-visuals-core";

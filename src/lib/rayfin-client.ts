@@ -5,35 +5,29 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import RayfinClient from "@microsoft/rayfin-client";
+import { RayfinClient } from "@microsoft/rayfin-client";
 
 let _client: RayfinClient | undefined;
 
 /**
- * Returns the singleton RayfinClient.
- *
- * Lazily constructs the client from `VITE_RAYFIN_BASE_URL` and
- * `VITE_RAYFIN_PUBLISHABLE_KEY`. Throws if either is missing — callers
- * (e.g. the AuthProvider) should catch and surface as a user-visible
- * error rather than crashing during render.
+ * Returns the pre-configured RayfinClient singleton.
  */
 export function getRayfinClient(): RayfinClient {
-    if (_client) return _client;
+    if (!_client) {
+        const apiUrl = import.meta.env.VITE_RAYFIN_API_URL;
+        const publishableKey = import.meta.env.VITE_RAYFIN_PUBLISHABLE_KEY;
 
-    const baseUrl = import.meta.env.VITE_RAYFIN_BASE_URL;
-    const publishableKey = import.meta.env.VITE_RAYFIN_PUBLISHABLE_KEY;
+        if (!apiUrl || !publishableKey) {
+            throw new Error(`Missing required env vars for creating rayfin client - run 'npx rayfin up'`);
+        }
 
-    if (!baseUrl || !publishableKey) {
-        throw new Error(
-            "RayfinClient requires VITE_RAYFIN_BASE_URL and VITE_RAYFIN_PUBLISHABLE_KEY to be set.",
-        );
+        _client = new RayfinClient({
+            baseUrl: apiUrl,
+            publishableKey,
+            authStorage: true,
+            useProxy: false,
+        });
     }
-
-    _client = new RayfinClient({
-        baseUrl,
-        publishableKey,
-        authStorage: true,
-    });
 
     return _client;
 }

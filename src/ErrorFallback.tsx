@@ -6,9 +6,11 @@
 //-----------------------------------------------------------------------
 
 export const ErrorFallback = ({ error, resetErrorBoundary }: { error: unknown; resetErrorBoundary: () => void }) => {
-    if (import.meta.env.DEV) throw error;
-
     const message = error instanceof Error ? error.message : String(error);
+
+    // Log to the console so DevTools shows the full stack regardless of
+    // environment. The styled fallback below is what users see.
+    if (import.meta.env.DEV) console.error("[ErrorBoundary]", error);
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background p-4">

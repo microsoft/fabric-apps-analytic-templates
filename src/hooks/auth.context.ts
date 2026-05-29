@@ -19,13 +19,12 @@ export interface AuthContextValue {
     error: Error | null;
 }
 
-export const AuthContext = createContext<AuthContextValue>({
-    session: null,
-    isAuthenticated: false,
-    isLoading: false,
-    error: null,
-});
+export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function useAuth(): AuthContextValue {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
 }

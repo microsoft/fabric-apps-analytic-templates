@@ -28,7 +28,7 @@ export function getFabricClient(): FabricClient {
 
     if (!_client) {
         const proxy = new EmbedFabricApiProxy(_messageClient);
-        _client = new FabricClient({ proxy, daxProtocol: "arrow", ...fabricConfig,  } as FabricClientConfig);
+        _client = new FabricClient({ proxy, ...fabricConfig,  } as FabricClientConfig);
     }
     
     return _client;

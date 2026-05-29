@@ -5,16 +5,20 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import { createRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client';
 import { ErrorBoundary } from "react-error-boundary";
 
-import App from './App.tsx'
-import { ErrorFallback } from './ErrorFallback.tsx'
-import { useAppTheme } from './hooks/use-theme.ts'
-import { ThemeContext } from './hooks/theme.context.ts'
-import { AuthProvider } from './hooks/use-auth.tsx'
+import App from './App.tsx';
+import { ErrorFallback } from './ErrorFallback';
+import { useAppTheme } from './hooks/use-theme';
+import { ThemeContext } from './hooks/theme.context';
+import { AuthProvider } from './hooks/use-auth';
+import { bootstrapAuth } from './services/rayfin-auth.service';
+import { AuthGate } from './components/auth-gate.component';
 
 import "./global.css"
+
+const rayfinAuthService = bootstrapAuth();
 
 function Root() {
     const { isDark, toggleTheme } = useAppTheme();
@@ -22,8 +26,10 @@ function Root() {
     return (
         <ThemeContext.Provider value={{ isDark, toggleTheme }}>
             <ErrorBoundary FallbackComponent={ErrorFallback}>
-                <AuthProvider>
-                    <App />
+                <AuthProvider rayfinAuthService={rayfinAuthService}>
+                    <AuthGate>
+                        <App />
+                    </AuthGate>
                 </AuthProvider>
             </ErrorBoundary>
         </ThemeContext.Provider>

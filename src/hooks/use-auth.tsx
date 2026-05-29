@@ -6,15 +6,14 @@
 //-----------------------------------------------------------------------
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { initEmbeddedAuth } from "@microsoft/rayfin-auth-provider-fabric";
 import type { OpaqueSession } from "@microsoft/rayfin-auth";
 
-import { getRayfinClient } from "@/lib/rayfin-client";
-import { getFabricAuthOptions } from "@/lib/fabric-auth";
+import { IAuthService } from "@/services/rayfin-auth.service";
 import { AuthContext, type AuthContextValue } from "./auth.context";
 
 interface AuthProviderProps {
     children: ReactNode;
+    rayfinAuthService: IAuthService;
 }
 
 /**
@@ -24,14 +23,12 @@ interface AuthProviderProps {
  * - When loaded inside a Fabric iframe (`?fabricEmbedded=true`), calls
  *   `initEmbeddedAuth` to acquire a Rayfin session via postMessage.
  * - When loaded standalone, `initEmbeddedAuth` returns `null` immediately
- *   and the provider settles in an unauthenticated state — no errors,
- *   no popup, the rest of the app renders normally.
- * - Missing env vars are caught and surfaced via `error`, never thrown
- *   during render.
+ *   and the provider settles in an unauthenticated state and `<AuthGate>` 
+ *   renders the "not embedded" notice.
  *
- * Consume the session with the `useAuth` hook (`@/hooks/auth.context`).
+ * Consume the session with the `useAuth` hook.
  */
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children, rayfinAuthService }: AuthProviderProps) {
     const [session, setSession] = useState<OpaqueSession | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -41,10 +38,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         (async () => {
             try {
-                const client = getRayfinClient();
-                const options = getFabricAuthOptions();
-                const result = await initEmbeddedAuth(client.auth, options);
-                if (!cancelled) setSession(result);
+                const result = await rayfinAuthService.initEmbeddedAuth();
+                if (cancelled)
+                    return;
+                setSession(result);
             } catch (err) {
                 if (!cancelled) {
                     setError(err instanceof Error ? err : new Error(String(err)));
@@ -57,7 +54,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [rayfinAuthService]);
+
+    if (error)
+        throw error;
 
     const value = useMemo<AuthContextValue>(
         () => ({

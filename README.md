@@ -20,7 +20,7 @@ This is a starter template for building Fabric Apps - Analytics web apps. Clone 
 3. **Navigate to the repo folder**: Run `cd <repo_name>`. (Optional: Run `code` to open VS Code in that folder and open Terminal inside VS Code.)
 4. **Install dependencies**: Run `npm install`.
 5. **Launch Copilot**: In the Command Prompt (cmd) or PowerShell terminal run `copilot` to start the Copilot CLI. Then type a prompt for what you want to build. Include the name or dataset ID of the semantic model (from Power BI Service) that you want to use. (To get the dataset ID, copy the value between `...dataset/` and `/overview...` from the URL)
-6. **Preview your app**: After LLM is done, run `npm run dev:fabric` in another terminal.
+6. **Preview your app**: After LLM is done, run `npm run dev` in another terminal.
 7. **Open fabric shell**: Navigate to the workspace in fabric portal and open the artifact. Then append `&devUri=http://localhost:5173` at the end.
 
 <details>

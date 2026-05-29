@@ -2,7 +2,7 @@
 
 interface ImportMetaEnv {
   /** Rayfin API base URL (e.g. http://localhost:5168). */
-  readonly VITE_RAYFIN_BASE_URL?: string;
+  readonly VITE_RAYFIN_API_URL?: string;
   /** Rayfin publishable key (pk-...). */
   readonly VITE_RAYFIN_PUBLISHABLE_KEY?: string;
   /** Fabric workspace ID — maps to FabricAuthOptions.workspaceId. */
