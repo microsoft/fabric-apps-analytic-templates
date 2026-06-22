@@ -67,13 +67,13 @@ Charts must fill their card's visible height — no dead space, no cropping. Thi
 
 1. **Grid/flex cell** → provides the height
 2. **Card wrapper** → `h-full` so the cell's height becomes definite
-3. **Card content area** → `flex-1 min-h-0 overflow-visible`
-4. **Chart wrapper** → `flex flex-col flex-1 min-h-0 overflow-visible`
+3. **Card content area** → `flex-1 min-h-0`
+4. **Chart wrapper** → `flex flex-col flex-1 min-h-0`
 5. **VegaVisual** → fills its parent
 
 If a chart appears squished, trace the height chain upward — typically a missing `h-full` on an intermediate wrapper.
 
-Apply `overflow-visible` on both the VegaVisual parent and the card wrapper so axis titles, legends, and labels are not clipped. Do not wrap `<VegaVisual>` in a fixed-height container.
+Do not wrap `<VegaVisual>` in a fixed-height container.
 
 The direct parent of `<DataGrid>` should use `overflow-auto flex-1 min-h-0` for row scrolling.
 

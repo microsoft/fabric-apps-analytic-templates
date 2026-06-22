@@ -3,7 +3,8 @@ name: query-design
 description: >
   Separates DAX data-fetching from TypeScript presentation. Guides when to use 
   DAX vs. TypeScript vs. Vega-Lite for aggregation, total rows, FORMAT(), SELECTCOLUMNS, 
-  BLANK handling, filtering, multi-grain queries, and format strings.
+  BLANK handling, filtering, multi-grain queries, cross-filtering and
+  cross-highlight subset/overlay queries, and format strings.
 ---
 
 # Query Design — Separation of Data and Presentation
@@ -85,13 +86,23 @@ Need to add something to the query result?
            Still unclear? -> Read the relevant reference above
 ```
 
+## Interactivity
+
+Reports coordinate multiple visuals: a selection in one changes what the others show. Two distinct behaviors, with different data work behind them:
+
+- **Cross-filtering** — a selection in one visual constrains the data shown in another, removing or narrowing the non-matching rows from the target's view. The target shows *less*. Applying that constraint is a cost/cardinality tradeoff — widen the grain and filter client-side, or push the filter into DAX and re-query. See [Filter strategy](references/filter-strategy.md).
+- **Cross-highlighting** — a selection in one visual emphasizes the matching subset *within* another while the full context stays visible. The target keeps its baseline (dimmed) and draws the selected subset bright on top. The subset is a separate aggregation aligned to the baseline's grouping, measures, and row set — not a client-side filter of the baseline. See [Highlight queries](references/highlight-queries.md).
+
+Both consume the predicate-based selection events the visual components emit (`onInteraction`). The components render only the `DataTable`s they are handed; this skill produces those tables. For how a spec binds and layers multiple datasets, see the visuals skill's [multi-data input](../visuals/references/multi-data-input.md) reference.
+
 ## Reference Materials
 
 Read these when working on a specific topic:
 
 - **[Anti-patterns and corrections](references/anti-patterns.md)** — Open when reviewing a query that uses `UNION` for totals, `FORMAT()`, `SELECTCOLUMNS` for renaming, `CONCATENATEX`/emoji decoration, BLANK-to-`0` conversion, or `GENERATE`/`CROSSJOIN` for gap-filling.
 - **[Multi-grain patterns](references/multi-grain-patterns.md)** — Open when a single visualization needs data at two grains (e.g., bars + grand-total reference line, region detail + total row, monthly trend + YTD).
-- **[Filter strategy](references/filter-strategy.md)** — Open when adding a user-controlled filter and deciding whether to widen the grain (filter client-side) or push the filter into DAX (re-query on each change).
+- **[Filter strategy](references/filter-strategy.md)** — Open when adding a user-controlled filter or implementing cross-filtering, and deciding whether to widen the grain (filter client-side) or push the filter into DAX (re-query on each change).
+- **[Highlight queries](references/highlight-queries.md)** — Open when writing the "selected subset" overlay query for a cross-highlight visual: an aligned `CALCULATETABLE` / `TREATAS` query whose rows match the baseline.
 - **[Format strings](references/format-strings.md)** — Open when picking a `columnMetadata.format` value, when a measure has a dynamic format string, or when formatting needs to flow into a Vega-Lite axis.
 
 ## Integration with Sibling Skills

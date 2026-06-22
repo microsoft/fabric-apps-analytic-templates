@@ -4,7 +4,10 @@ description: >
   Use when user wants to incorporate charts, graphs, data grid, 
   or other visual representations of data into their project.
   Use VegaVisual and DataGrid components to create these visuals, 
-  utilizing the shared data types, formatting, theme, and interactivity hooks.
+  utilizing the shared DataTable input, formatting, theme, and interactivity.
+  Covers the onInteraction selection/click events host apps consume, named
+  multi-table data input for layered overlays and reference lines, and
+  Vega-Lite native selections.
 ---
 
 # Visuals
@@ -33,7 +36,7 @@ The chart and data grid components share a unified `data` prop of type `DataTabl
 
 **Static/inline data**: For static data, transformed data, or plain arrays, put `data: { values: [...] }` directly in the Vega-Lite spec and omit the `data` prop.
 
-**Multiple tables in one visual**: the `data` prop also accepts a `Record<string, DataTable>` for specs that need to reference more than one dataset by name. See [references/multi-data-input.md](references/multi-data-input.md) for the syntax and caveats.
+**Multiple tables in one visual**: the `data` prop also accepts a `Record<string, DataTable>` for specs that bind separate layers to more than one dataset by name such as layered overlays, reference lines, and axis spines. See [references/multi-data-input.md](references/multi-data-input.md).
 
 ```tsx
 import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
@@ -76,7 +79,9 @@ Always use the above mentioned ways to create visual when possible. If the user'
 
 Both `VegaVisual` and `DataGrid` expose an `onInteraction` prop that emits structured, predicate-based events when the user clicks a data point or row.
 
-**Always use the `onInteraction` prop** on `VegaVisual` and `DataGrid` to handle user interactions such as selections, cross-highlighting, and cross-filtering.
+**Always use the `onInteraction` prop** on `VegaVisual` and `DataGrid` to surface user selections. The component only emits the selection; the host app decides what it does — e.g. coordinating other visuals or queries on the page.
+
+> A visual renders a layered subset by binding two named datasets to two layers (`data={{ all, highlighted }}`) — see [references/multi-data-input.md](references/multi-data-input.md). The component renders whatever tables it is handed.
 
 ```tsx
 import type { InteractionEvent } from "@microsoft/fabric-visuals-core";

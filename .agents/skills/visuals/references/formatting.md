@@ -20,7 +20,14 @@ Formats defined in `columnMetadata` are auto-applied by `VegaVisual` to axes, le
 
 ### Categorical Color Palette
 
-The base Vega-Lite theme includes a 10-color categorical palette. These colors are a starting point, not a strict requirement — you may extend, replace, or create an entirely new palette that better suits the data or the app's aesthetic direction. Just ensure sufficient contrast between series and accessibility for color-vision deficiency.
+The base Vega-Lite theme includes a 10-color categorical palette. These colors are a starting point, not a strict requirement — you may extend, replace, or create an entirely new palette that better suits the data or the app's aesthetic direction.
+
+### Custom Data Color Accessibility
+
+When choosing custom colors for data series, ensure adjacent colors remain easily distinguishable:
+
+- **Alternating contrast**: Alternate contrast ratios against the background by approximately ±2 (e.g., 7:1, 5:1, 3:1) so neighboring series never blend together.
+- **Minimum contrast**: Every data color must maintain at least a **3:1 contrast ratio** against the chart background.
 
 ## Chart-Specific Rules
 
@@ -58,11 +65,6 @@ The base Vega-Lite theme includes a 10-color categorical palette. These colors a
 ### Other Charts
 
 - No extra encodings needed.
-
-## Zero Baseline
-
-- Default to `scale: { zero: false }` on quantitative Y encodings so the axis fits the data.
-- **Exception**: Do not set `zero: false` on bar/column charts.
 
 ## General Guidelines
 

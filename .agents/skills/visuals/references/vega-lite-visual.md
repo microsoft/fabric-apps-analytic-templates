@@ -78,6 +78,20 @@ When you need multiple marks (e.g., bars with text labels), put **all** marks in
 1. **Never combine `mark` with `layer`** at the same level.
 2. **Each layer entry must define a valid spec at its own level** — it may be a unit spec with its own `mark` (and optional `encoding`), or a nested composition such as another `layer` spec.
 
+## Encoding Type Selection
+
+### When to use `temporal` vs `quantitative` for date/year fields
+
+Vega-Lite's `"temporal"` type interprets raw numeric values as **Unix epoch milliseconds** (milliseconds since Jan 1, 1970). This means plain year integers like `1900` or `2023` will be misinterpreted as timestamps within the first few seconds of 1970, producing garbled axis labels (e.g., ".905" instead of "1905").
+
+**Use `"temporal"` only when** the data contains actual date/time values:
+- ISO 8601 strings (e.g., `"2023-06-15"`, `"2023-06-15T10:30:00Z"`)
+- Unix timestamps in milliseconds (e.g., `1686816000000`)
+
+**Use `"quantitative"` when** the data contains plain year integers (e.g., `1900`, `2017`). If the column metadata omits `format` (or uses `"0"` to suppress grouping separators), the axis will display clean integer years.
+
+**How to decide:** Before setting the encoding type, check what the DAX query actually returns. If the column is an integer year (no date parts like month/day), use `"quantitative"`. If the column is a full date or datetime value, use `"temporal"`.
+
 ## Props
 
 Refer to the package README.md for detailed information about the component api including exported types, functions, and properties.
