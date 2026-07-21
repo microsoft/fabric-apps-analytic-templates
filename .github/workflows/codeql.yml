@@ -1,12 +1,10 @@
 name: CodeQL
 
 # -----------------------------------------------------------------------------
-# Weekly CodeQL security scan (S360 compliance)
+# Weekly CodeQL security scan
 #
 # This workflow runs CodeQL static analysis on a fixed weekly schedule (every
-# Monday) against the `main` branch. It exists specifically to satisfy the
-# Microsoft S360 security requirement that our codebase is regularly scanned
-# for vulnerabilities, independent of CI, pull requests, or any other pipeline.
+# Monday) against the `main` branch.
 #
 # Notes:
 #   - GitHub only runs `schedule` triggers from the repository's DEFAULT branch
