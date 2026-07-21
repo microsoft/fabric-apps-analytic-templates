@@ -15,7 +15,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    # Every Monday at 14:37 UTC, with no end date.
+    # Every Monday at 16:27 UTC, with no end date.
     # Minute/hour chosen at random and deliberately off the top of the hour to
     # avoid GitHub's peak scheduler load (which can delay/drop :00 cron runs).
     - cron: "27 16 * * 1"
