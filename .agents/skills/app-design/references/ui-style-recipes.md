@@ -69,7 +69,7 @@ When nesting rounded containers, step down the radius scale so inner corners don
 
 ### Spacing rhythm
 
-Use the 4px baseline grid (`spacing-xs`, `spacing-s`, `spacing-m`, `spacing-l`, etc.). Within a component, be consistent — don't mix spacing scales arbitrarily.
+Use the 4px baseline grid (`spacing-100`, `spacing-200`, `spacing-300`, `spacing-400`, etc.). Within a component, be consistent — don't mix spacing scales arbitrarily.
 
 ### Horizontal bar alignment
 
@@ -84,8 +84,10 @@ Elements that repeat in dense contexts (table rows, lists, toolbars) must be sty
 Use the 100-based scale (`text-100` through `text-hero-1000`). Pair sizes with matching line heights (`leading-100` through `leading-hero-1000`). Scale your type hierarchy to match the aesthetic direction — a bold direction might use `text-500`+ for headings, while a dense or utilitarian direction stays compact with `text-300`/`text-400`. Baseline defaults if no direction is set:
 - Body text: `text-300 leading-300`
 - Small / secondary: `text-200 leading-200`
-- Section headings: `text-400 font-semibold`
-- Hero metrics: `text-hero-900 font-bold`
+- Section headings: `text-400 leading-400 font-semibold`
+- Hero metrics: `text-hero-900 leading-hero-900 font-bold`
+
+Do not use `leading-none` for stacked headings or metrics with labels, subtitles, or hints.
 
 ### Animation patterns
 
@@ -159,7 +161,7 @@ These are often left unstyled — don't. They should match the aesthetic directi
 - **Surface**: `bg-popover text-popover-foreground`
 - **Shadow**: `shadow-8`
 - **Item focus**: `focus:bg-accent focus:text-accent-foreground`
-- **Item spacing**: keep compact — `py-s-nudge px-s` range
+- **Item spacing**: keep compact — `py-200-nudge px-200` range
 - **Item typography**: `text-300`
 - **Max height**: respect Radix's available-height variable for viewport-aware sizing
 

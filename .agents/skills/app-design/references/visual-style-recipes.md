@@ -148,7 +148,6 @@ The default `cornerRadiusEnd` is `4` (from `--radius-md`). Use `0` for sharp aes
 
 ### Pie / Donut
 
-- For donuts, set `innerRadius` to ~65% of `outerRadius` for a balanced hole.
 - Single series: hide the legend.
 
 ### Waterfall charts

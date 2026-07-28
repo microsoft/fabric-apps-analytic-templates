@@ -58,7 +58,7 @@ export function EmptyStatePreview() {
     return (
         <MotionConfig reducedMotion="user">
         <div
-            className="relative flex min-h-full w-full items-center justify-center p-xxxl"
+            className="relative flex min-h-full w-full items-center justify-center p-800"
             style={{
                 background:
                     "color-mix(in srgb, var(--color-background) 50%, var(--color-muted))",
@@ -81,7 +81,7 @@ export function EmptyStatePreview() {
                         }}
                     >
                         {/* Tab pills */}
-                        <div className="flex items-center gap-m mb-xxl">
+                        <div className="flex items-center gap-300 mb-600">
                             {TABS.map((tab, i) => (
                                 <button
                                     key={tab.id}
@@ -146,7 +146,7 @@ export function EmptyStatePreview() {
                     <h2 className="font-heading font-semibold text-400 leading-[24px] text-foreground m-0">
                         Hello world
                     </h2>
-                    <p className="font-base text-300 leading-300 text-foreground m-0 mt-s max-w-[518px]">
+                    <p className="font-base text-300 leading-300 text-foreground m-0 mt-200 max-w-[518px]">
                         This is a blank data app template, with built-in skills and capabilities
                         for visual analytics and data decision-making.
                     </p>
@@ -154,7 +154,7 @@ export function EmptyStatePreview() {
                         href="https://go.microsoft.com/fwlink/?LinkId=2365127"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block mt-l px-s py-xs rounded-xl border-0 bg-foreground text-background font-base text-200 cursor-pointer no-underline"
+                        className="inline-block mt-400 px-200 py-100 rounded-xl border-0 bg-foreground text-background font-base text-200 cursor-pointer no-underline"
                     >
                         Learn more
                     </a>
@@ -172,8 +172,8 @@ export function EmptyStatePreview() {
 /** Tab 1: two-row chart grid — area + bar over donut + list. */
 function OverviewLayout() {
     return (
-        <div className="grid h-full w-full grid-rows-2 gap-xl">
-            <div className="grid min-h-0 grid-cols-5 gap-xl">
+        <div className="grid h-full w-full grid-rows-2 gap-500">
+            <div className="grid min-h-0 grid-cols-5 gap-500">
                 <SurfaceSkeleton delay={0.05} className="col-span-3 h-full">
                     <AreaChartGhost delay={0.15} />
                 </SurfaceSkeleton>
@@ -181,7 +181,7 @@ function OverviewLayout() {
                     <BarChartGhost delay={0.2} />
                 </SurfaceSkeleton>
             </div>
-            <div className="grid min-h-0 grid-cols-5 gap-xl">
+            <div className="grid min-h-0 grid-cols-5 gap-500">
                 <SurfaceSkeleton delay={0.15} className="col-span-2 h-full">
                     <DonutGhost delay={0.25} />
                 </SurfaceSkeleton>
@@ -196,8 +196,8 @@ function OverviewLayout() {
 /** Tab 2: Three sparkline cards on top, wide map visual below (taller). */
 function GeoLayout() {
     return (
-        <div className="grid h-full w-full gap-xl [grid-template-rows:1fr_3fr]">
-            <div className="grid min-h-0 grid-cols-3 gap-xl">
+        <div className="grid h-full w-full gap-500 [grid-template-rows:1fr_3fr]">
+            <div className="grid min-h-0 grid-cols-3 gap-500">
                 <SurfaceSkeleton delay={0.05} className="h-full">
                     <SparklineGhost delay={0.15} variant="up" />
                 </SurfaceSkeleton>
@@ -218,8 +218,8 @@ function GeoLayout() {
 /** Tab 3: Summary chart + list on the left, form on the right. */
 function FormLayout() {
     return (
-        <div className="grid h-full w-full grid-cols-5 gap-xl">
-            <div className="col-span-2 grid h-full grid-rows-2 gap-xl">
+        <div className="grid h-full w-full grid-cols-5 gap-500">
+            <div className="col-span-2 grid h-full grid-rows-2 gap-500">
                 <SurfaceSkeleton delay={0.1} className="h-full">
                     <BarChartGhost delay={0.2} />
                 </SurfaceSkeleton>
@@ -315,7 +315,7 @@ function SurfaceSkeleton({
                 }}
             />
             {children ? (
-                <div className={`relative h-full w-full ${bleed ? "" : "p-l"}`}>
+                <div className={`relative h-full w-full ${bleed ? "" : "p-400"}`}>
                     {children}
                 </div>
             ) : null}
@@ -556,8 +556,8 @@ function SparklineGhost({
             ? "M0 40 L 30 35 L 60 38 L 90 25 L 120 28 L 150 12 L 180 18"
             : "M0 12 L 30 18 L 60 14 L 90 28 L 120 24 L 150 36 L 180 32";
     return (
-        <div className="flex h-full items-center gap-m">
-            <div className="flex flex-1 flex-col gap-s">
+        <div className="flex h-full items-center gap-300">
+            <div className="flex flex-1 flex-col gap-200">
                 <Skeleton className="h-2.5 w-16 rounded-full" delay={delay} />
                 <Skeleton className="h-5 w-20 rounded-md" delay={delay + 0.05} />
             </div>
@@ -613,8 +613,8 @@ function FormGhost({ delay = 0 }: { delay?: number }) {
         { labelW: "w-16" },
     ];
     return (
-        <div className="flex h-full flex-col justify-between gap-m">
-            <div className="flex flex-col gap-m">
+        <div className="flex h-full flex-col justify-between gap-300">
+            <div className="flex flex-col gap-300">
                 {fields.map((f, i) => (
                     <motion.div
                         key={i}
@@ -625,10 +625,10 @@ function FormGhost({ delay = 0 }: { delay?: number }) {
                             ease: "easeOut",
                             delay: delay + i * 0.06,
                         }}
-                        className="flex flex-col gap-s"
+                        className="flex flex-col gap-200"
                     >
                         <div className={`h-2 ${f.labelW} rounded-full bg-foreground/[0.12]`} />
-                        <div className="flex h-6 w-full items-center border border-input bg-background px-m rounded-2xl">
+                        <div className="flex h-6 w-full items-center border border-input bg-background px-300 rounded-2xl">
                             <div className="h-2 w-32 rounded-full bg-foreground/[0.12]" />
                         </div>
                     </motion.div>
@@ -638,7 +638,7 @@ function FormGhost({ delay = 0 }: { delay?: number }) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: "easeOut", delay: delay + 0.4 }}
-                className="flex items-center justify-end gap-m"
+                className="flex items-center justify-end gap-300"
             >
                 <div className="h-5 w-[72px] rounded-[10px] bg-foreground/[0.12]" />
                 <div

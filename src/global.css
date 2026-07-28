@@ -58,19 +58,20 @@
   --radius-full: 9999px;
   --radius: 6px;
 
-    /* Spacing — 4px baseline grid 
-      Usage: p-*, m-*, gap-* (e.g. p-l gap-m) */
+  /* Spacing — 4px grid; use only these tokens, no interpolation. *-nudge = base − 2px.
+     Usage: p-*, m-*, gap-* (e.g. p-400 gap-300) */
   --spacing-none: 0;
-  --spacing-xxs: 2px;
-  --spacing-xs: 4px;
-  --spacing-s-nudge: 6px;
-  --spacing-s: 8px;
-  --spacing-m-nudge: 10px;
-  --spacing-m: 12px;
-  --spacing-l: 16px;
-  --spacing-xl: 20px;
-  --spacing-xxl: 24px;
-  --spacing-xxxl: 32px;
+  --spacing-100-nudge: 2px;
+  --spacing-100: 4px;
+  --spacing-200-nudge: 6px;
+  --spacing-200: 8px;
+  --spacing-300-nudge: 10px;
+  --spacing-300: 12px;
+  --spacing-400: 16px;
+  --spacing-500: 20px;
+  --spacing-600: 24px;
+  --spacing-700: 28px;
+  --spacing-800: 32px;
 
   /* Font Sizes — 100-based scale 
      Usage: text-* (e.g. text-300, text-hero-900) */

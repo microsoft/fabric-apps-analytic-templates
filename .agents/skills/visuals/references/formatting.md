@@ -123,7 +123,7 @@ The visual components read their styling from CSS custom properties on the page.
 | Colors | `--color-foreground`, `--color-background`, `--color-brand-*`, etc. |
 | Font family | `--font-base`, `--font-monospace` |
 | Font sizes | `--text-200` through `--text-600` |
-| Spacing | `--spacing-s`, `--spacing-m`, etc. |
+| Spacing | `--spacing-200`, `--spacing-300`, etc. |
 | Border radius | `--radius-sm`, `--radius-md`, etc. |
 
 > **Note:** The category color palette (series colors in charts) is built into the visual theme and is not currently customizable via CSS.

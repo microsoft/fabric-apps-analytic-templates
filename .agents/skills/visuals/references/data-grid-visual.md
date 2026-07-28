@@ -38,10 +38,10 @@ const theme = useCssTheme();
     const num = typeof value === "number" ? value : 0;
     const pct = Math.min((num / maxValue) * 100, 100);
     return (
-      <div className="flex items-center gap-s">
-        <div className="h-s w-full rounded-full bg-muted">
+      <div className="flex items-center gap-200">
+        <div className="h-200 w-full rounded-full bg-muted">
           <div
-            className="h-s rounded-full bg-primary"
+            className="h-200 rounded-full bg-primary"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -128,7 +128,7 @@ import { CellTooltip } from "@microsoft/fabric-datagrid";
     const name = String(value ?? "");
     const detail = String(row["email"] ?? "");
     return (
-      <CellTooltip content={<div className="rounded-xl border bg-popover p-l shadow-lg"><p>{name}</p><p>{detail}</p></div>}>
+      <CellTooltip content={<div className="rounded-xl border bg-popover p-400 shadow-lg"><p>{name}</p><p>{detail}</p></div>}>
         <span>{name}</span>
       </CellTooltip>
     );

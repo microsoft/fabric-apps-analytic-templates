@@ -215,6 +215,8 @@ Use `toDataTable()` from `src/lib/to-data-table.ts` to convert the SDK's `QueryT
 
 `VegaVisual` and `DataGrid` components should call factory functions for query + spec + columnMetadata — never define specs inline in component files. Refer to the [visuals](.agents/skills/visuals/SKILL.md) skill when building them.
 
+`App.tsx` ships rendering a placeholder `EmptyStatePreview`. Before building the real dashboard, replace `<EmptyStatePreview />` with your components, remove its import, and delete the now-unused `src/EmptyStatePreview.tsx` and `src/empty-state-preview-world-map.png`.
+
 #### Example
 
 ```tsx

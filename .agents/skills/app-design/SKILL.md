@@ -106,7 +106,7 @@ All styling must use the design tokens defined in `src/global.css` via Tailwind 
 Examples:
 - `bg-primary text-primary-foreground` — not `bg-blue-600 text-white`
 - `text-300` — not `text-sm` or `text-[14px]`
-- `p-l gap-m` — not `p-4`, `gap-3`, `p-spacing-l`, or `gap-spacing-m`
+- `p-400 gap-300` — not `p-4` or `gap-3`
 - `font-semibold` — not `font-[600]`
 - `rounded-xl` — not `rounded-[8px]`
 - `icon-size-200` — not `w-4 h-4`
