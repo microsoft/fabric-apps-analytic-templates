@@ -36,7 +36,8 @@ description: >
 ### Avoid
 - Fetching full schema upfront — discover incrementally based on need
 - Re-fetching metadata already discovered in this conversation
-- Using GetSemanticModelSchema, DiscoverArtifacts, or GenerateQuery MCP tools (these are not available)
+- Using GetSemanticModelSchema or GenerateQuery MCP tools (these are not available)
+- Using `DiscoverArtifacts` to find a semantic model — that MCP tool is not available; use `npx fabric-app-data search` (see [fabric-cli](../fabric-cli/SKILL.md)) instead
 
 ## Progressive Schema Discovery
 

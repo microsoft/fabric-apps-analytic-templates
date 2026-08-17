@@ -61,17 +61,21 @@ npx fabric-app-data init --force            # overwrite existing
 
 Add a connection to a profile. Two modes:
 
-**From Fabric portal URL (preferred):**
+**From Fabric portal URL (preferred when the user pastes a URL):**
 ```sh
 npx fabric-app-data add <alias> --from-url "<Fabric portal URL>"
 ```
 
-**Explicit IDs:**
+**Explicit IDs (use this after `search` to register a chosen result):**
 ```sh
 npx fabric-app-data add semanticModel <alias> -w <workspaceId> -i <itemId>
 ```
 
-**Important:** Use exactly these flag names. The short flags are `-w` and `-i`. The long flags are `--workspace` and `--item`. Do NOT use `--workspace-id` or `--item-id` — those do not exist.
+To register a model the user named (rather than linked), run `search` first,
+pick the right row, then call `add` with that row's `-w`/`-i`. `add` never
+searches — discovery and registration are separate steps.
+
+**Important:** Prefer the short flags `-w` and `-i` (long forms `--workspace` and `--item`). Use one consistent style per command.
 
 The URL parser extracts workspace ID, item ID, and type automatically.
 Supported URL segments: `semanticmodels`, `modeling`, `lakehouses`,
@@ -79,6 +83,42 @@ Supported URL segments: `semanticmodels`, `modeling`, `lakehouses`,
 
 Options:
 - `-p, --profile <name>` — target profile (defaults to active)
+
+### `npx fabric-app-data search`
+
+Find a semantic model by display name via the Fabric Catalog Search endpoint.
+Useful when the user knows the model name but not the workspace + item ids.
+`search` only **returns results** — it never registers a connection; follow it
+with `add -w <workspaceId> -i <itemId>`.
+
+```sh
+npx fabric-app-data search "<name>"
+npx fabric-app-data search "<name>" --json              # machine-readable output (preferred for agents)
+npx fabric-app-data search "<name>" -w "<workspace>"    # restrict to one workspace (name or GUID)
+npx fabric-app-data search "<name>" --max-results 5
+```
+
+Options:
+- `--type <type>` — scope the search to a Fabric item type (default `semanticModel`). The type is forwarded to Catalog Search, which returns whatever item types it supports.
+- `-w, --workspace <nameOrId>` — restrict results to a single workspace (display name or GUID)
+- `--max-results <n>` — cap on hits returned (default 10, hard cap 50)
+- `--json` — emit machine-readable JSON
+
+**Caveats — read before using:**
+- Catalog Search is fuzzy and tokenized. It **never returns empty** for any
+  query — even nonsense strings produce ranked hits. A non-empty response does
+  **not** imply a confident match. Always reason over the `displayName` values
+  before adding a connection.
+- Exit code is `0` when at least one hit is returned, `1` when none are. Use
+  this to branch in scripts.
+- Items in your personal **My workspace** come back with `workspaceId` set to
+  the `me` sentinel — pass `-w me` to `add` (and to `query`), since My Workspace
+  has no separate workspace GUID in the Fabric APIs.
+- JSON output (`--json`) is the preferred format for agents: it includes
+  `source` (`catalog` / `none`), `workspaceFilter`, `truncated`,
+  and a normalized `results[]` shape (`itemId`, `itemType`, `displayName`,
+  `description`, `workspaceId`, `workspaceName`) — enough metadata to
+  disambiguate same-named models in different workspaces.
 
 ### `npx fabric-app-data remove <alias>`
 

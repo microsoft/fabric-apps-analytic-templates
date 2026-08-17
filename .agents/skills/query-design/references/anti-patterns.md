@@ -2,7 +2,7 @@
 
 ## Contents
 
-1. [UNION to mix grains](#anti-pattern-1-union-to-mix-grains) — combining detail rows + a total row in one query
+1. [UNION to mix grains](#anti-pattern-1-union-to-mix-grains) — manually combining body rows + a total row
 2. [FORMAT() for display labels](#anti-pattern-2-format-for-display-labels) — converting numbers to formatted strings in DAX
 3. [Stringified dates](#anti-pattern-3-stringified-dates) — turning dates into month-name strings in DAX
 4. [Complex DAX for dimension completeness](#anti-pattern-4-complex-dax-for-dimension-completeness) — GENERATE/CROSSJOIN to force-include empty dimension members
@@ -12,7 +12,7 @@
 
 ## Anti-Pattern 1: UNION to mix grains
 
-**Problem:** `UNION` to combine detail rows and a total row into one result set. Mixes grains in one query — downstream code must detect which rows are totals vs. detail.
+**Problem:** `UNION` manually combines body rows and a total row without a standard grain discriminator.
 
 ```dax
 // ❌ Avoid
@@ -26,85 +26,34 @@ EVALUATE
   UNION(AllRegions, RegionBreakdown)
 ```
 
-**Fix — total is derivable from detail (SUM, COUNT, MIN, MAX):** Fetch detail in DAX, roll up in TypeScript.
+**Fix — flagged rollup:** Use `ROLLUPADDISSUBTOTAL` so DAX evaluates the same expressions at the body and grand-total grains. Return one result table, split it with `toRollupDataTables()`, and pass the returned `grandTotalTable` through `grandTotals.data`. See [Multi-grain patterns](multi-grain-patterns.md) for the filter-aware query and wiring.
 
-```dax
-// ✅ DAX: detail grain only
-EVALUATE
-  SUMMARIZECOLUMNS('Region'[Name], "Revenue", [Total Revenue])
-ORDER BY 'Region'[Name]
-```
+**Alternative — DataGrid-computed SUM or COUNT:** Choose this when the user requests computed totals or a rollup query is infeasible, but only for additive sums or a count of fetched leaf rows. Omit `grandTotals.data` and set `defaultAggregation` in the body metadata.
 
 ```typescript
-// ✅ TypeScript: derive total, render in DataGrid with cellRenderer
-const detailTable = toDataTable(detail.data.table, columnMetadata);
-const revenueIdx = detailTable.columns.findIndex(c => c.name === "Revenue");
-const total = detailTable.rows.reduce((sum, row) => sum + (row[revenueIdx] as number), 0);
-
-const columns: GridColumnDef[] = detailTable.columns.map((col, i) => ({
-  id: col.name,
-  header: col.displayName ?? col.name,
-  cellRenderer: i === revenueIdx
-    ? (value, row) => row._id === "total"
-        ? <span className="font-semibold">{formatNumber(value as number, col.format)}</span>
-        : undefined
-    : undefined,
-}));
-
-const rows: Row[] = [
-  ...detailTable.rows.map((r, i) => toRow(r, detailTable.columns, `r${i}`)),
-  { _id: "total", [detailTable.columns[0].name]: "All Regions", Revenue: total },
-];
-
-<DataGrid columns={columns} data={rows} theme={theme} />
+// ✅ Factory metadata: DataGrid computed totals currently support only sum and count
+export const columnMetadata: ColumnMetadataMap = {
+  "'Region'[Name]": { name: "RegionName", displayName: "Region" },
+  "[Revenue]": {
+    name: "Revenue",
+    displayName: "Revenue",
+    format: "$#,##0.00",
+    defaultAggregation: "sum",
+  },
+};
 ```
 
-For VegaVisual, pass detail + computed total as separate named datasets:
-
 ```tsx
-<VegaVisual
-  spec={vegaLiteSpec}
-  data={{ detail: detailTable, summary: summaryTable }}
+const bodyTable = toDataTable(body.data.table, columnMetadata);
+
+<DataGrid
+  data={bodyTable}
+  grandTotals={{ position: "bottom" }}
   theme={theme}
 />
 ```
 
-```json
-{
-  "layer": [
-    { "data": { "name": "detail" }, "mark": "bar", "encoding": { "x": { "field": "RegionName" }, "y": { "field": "Revenue" } } },
-    { "data": { "name": "summary" }, "mark": "rule", "encoding": { "y": { "field": "Revenue" } } }
-  ]
-}
-```
-
-**Fix — total NOT derivable from detail (DISTINCTCOUNT, ratios, AVERAGEX, complex measures):** Use a separate DAX query at the summary grain.
-
-```dax
-// ✅ Query 1: detail grain
-EVALUATE
-  SUMMARIZECOLUMNS('Region'[Name], "Unique Customers", DISTINCTCOUNT('Sales'[Customer Key]))
-ORDER BY 'Region'[Name]
-```
-
-```dax
-// ✅ Query 2: summary grain (separate .dax file)
-EVALUATE
-  ROW("Unique Customers", DISTINCTCOUNT('Sales'[Customer Key]))
-```
-
-```typescript
-// ✅ Two hook calls, two DataTables
-const detail = useSemanticModelQuery({ connection, query: detailQuery });
-const summary = useSemanticModelQuery({ connection, query: totalQuery });
-const detailTable = toDataTable(detail.data.table, detailMeta);
-const summaryTable = toDataTable(summary.data.table, summaryMeta);
-
-// VegaVisual: pass { detail: detailTable, summary: summaryTable }
-// DataGrid: append summary row with cellRenderer (same pattern as the derivable case)
-```
-
-> **Rule of thumb:** If the total is a simple rollup of one column (SUM, COUNT, MIN, MAX), TypeScript can derive it from already-fetched detail rows. Anything else — DISTINCTCOUNT, AVERAGEX, ratios, or any non-trivial model measure — must be computed by DAX at the summary grain. When in doubt, use a separate DAX query: an extra round-trip is cheap; a wrong total is a silent data bug.
+> **Rule of thumb:** Never sum grouped `DISTINCTCOUNT`, ratios, averages, or other non-additive results. Let the rollup query evaluate them at grand-total context, and never append the resulting total to the body data.
 
 ## Anti-Pattern 2: FORMAT() for display labels
 

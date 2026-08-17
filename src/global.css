@@ -38,8 +38,11 @@
   --color-accent: #f5f5f5;                                           /* accent highlights */
   --color-accent-foreground: #242424;
 
-  --color-destructive: #c50f1f;                                      /* errors & destructive actions */
+  --color-destructive: #b10e1c;                                      /* errors & destructive actions */
   --color-destructive-foreground: #ffffff;
+
+  --color-success: #0e700e;                                          /* success surfaces */
+  --color-success-foreground: #ffffff;
 
   --color-border: #e0e0e0;                                           /* default border */
   --color-input: #e0e0e0;                                            /* input field borders */
@@ -157,8 +160,11 @@
     --color-accent: #3d3d3d;
     --color-accent-foreground: #ffffff;
 
-    --color-destructive: #c50f1f;
+    --color-destructive: #dc626d;
     --color-destructive-foreground: #ffffff;
+
+    --color-success: #54b054;
+    --color-success-foreground: #ffffff;
 
     --color-border: #525252;
     --color-input: #525252;

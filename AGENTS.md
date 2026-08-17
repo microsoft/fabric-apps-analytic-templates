@@ -166,14 +166,30 @@ The workflow has three distinct phases:
 **Local `.pbix` files are not supported.** This app connects to semantic models published to the Power BI Service (cloud), not to local `.pbix` files on disk. If the user provides a local file path (e.g., `C:\...\Model.pbix`), **do not** attempt to open, upload, or search for it. Instead:
 1. Inform the user that local `.pbix` files are not supported — only models published to the Power BI Service can be used.
 2. Ask the user whether they would like to:
-   - **Search the Power BI Service** for a semantic model by name (you will search on their behalf), or
+   - **Search the Power BI Service** for a semantic model by name — run the Fabric CLI `search` command on their behalf, or
    - **Provide a specific online model** directly (workspace ID + dataset ID, or a Power BI / Fabric URL).
 
 Once the user confirms a published semantic model, read the [schema-discovery](.agents/skills/schema-discovery/SKILL.md) skill to progressively discover schema metadata as needed — do not fetch the full schema upfront.
 
-Once the model is identified, register it as a connection using the Fabric CLI (see the [fabric-cli](.agents/skills/fabric-cli/SKILL.md) skill for full command reference):
+Once the model is identified, register it as a connection using the Fabric CLI (see the [fabric-cli](.agents/skills/fabric-cli/SKILL.md) skill for full command reference). Choose the path that matches the input the user gave you:
+
 ```bash
-npx fabric-app-data add <alias> --from-url "<Power BI or Fabric URL>"
+# Path A — user gave a Power BI / Fabric URL
+npx fabric-app-data add semanticModel <alias> --from-url "<Power BI or Fabric URL>"
+
+# Path B — user wants you to search by name
+#  1. Discover candidates. --json is recommended so you can reason over
+#     displayName, workspaceName, description, and ids without parsing tables.
+npx fabric-app-data search "<name>" --json
+#  2. Review the results. If more than one could match, confirm the right one
+#     with the user (e.g. two same-named models in different workspaces).
+#  3. Register the chosen row by copying its workspaceId + itemId into `add`:
+npx fabric-app-data add semanticModel <alias> -w <workspaceId> -i <itemId>
+
+# Path C — user gave explicit IDs
+npx fabric-app-data add semanticModel <alias> -w <workspaceId> -i <itemId>
+
+# Finally — regenerate the typed config
 npx fabric-app-data generate -o src/fabric.generated.ts
 ```
 

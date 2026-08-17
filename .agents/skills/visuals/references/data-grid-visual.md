@@ -4,7 +4,54 @@ A React component from the `@microsoft/fabric-datagrid` package for rendering da
 
 ### Props
 
-Refer to the package README.md for detailed information about the component api including exported types, functions, and properties.
+Refer to the package README.md for the complete component API. This reference covers the DataGrid patterns and constraints needed when building the template.
+
+### Grand Totals
+
+For every DataGrid displaying grouped or aggregated measures, include a grand-total row by default. Omit it only when the user explicitly opts out, the grid shows row-level detail, or no displayed measure has a meaningful aggregate. Implementation complexity is not a reason to omit totals.
+
+Use the `grandTotals` prop instead of appending a total to the body data or styling one with `cellRenderer`.
+
+#### Provided grand-total rendering
+
+First author a flagged result using the query-design skill's [DataGrid grand-total query](../../query-design/references/multi-grain-patterns.md#datagrid-grand-total-query). After the query succeeds, split the result and pass the provided total through `grandTotals.data`:
+
+```tsx
+import { toRollupDataTables } from "@/lib/to-data-table";
+
+const { bodyTable, grandTotalTable } = toRollupDataTables(
+  result.data.table,
+  columnMetadata,
+  { rollupFlagColumns: ["[IsGrandTotal]"] },
+);
+
+<DataGrid
+  data={bodyTable}
+  grandTotals={{ position: "bottom", data: grandTotalTable }}
+  onFilterChange={handleFilterChange}
+  theme={theme}
+/>
+```
+
+Pass the exact serialized rollup flag name from the query result to `toRollupDataTables()`. The query-design reference also covers metadata, filters, deterministic query ordering, and safe payload limiting.
+
+#### Computed total alternative
+
+Use DataGrid-computed totals only for additive sums or a count of fetched leaf rows:
+
+```tsx
+<DataGrid
+  data={dataTable}
+  grandTotals={{ position: "bottom" }}
+  theme={theme}
+/>
+```
+
+- **Provided mode:** Pass an authoritative `DataTable` through `grandTotals.data`; DataGrid bypasses body-column `defaultAggregation`.
+- **Computed mode:** Pass `grandTotals` without `data` and set `defaultAggregation` on body columns. `data: undefined` enters this path but does not render a totals row by itself; no row renders when no column declares a supported aggregation. DataGrid currently honors only `"sum"` and `"count"`.
+- **Filtering:** DataGrid filtering is enabled by default, but provided totals do not update automatically. Keep body rows available for local filtering and pass `onFilterChange` selections through `ROLLUPADDISSUBTOTAL`'s grand-total-only filter before re-querying.
+- **Mapping and formatting:** Provided values map by `ColumnDef.name` and use the provided table's column formats.
+- **Label:** DataGrid displays `Total` by default. To override it, set the provided totals row's first leaf-column value; DataGrid displays that value instead.
 
 ### Theming
 
