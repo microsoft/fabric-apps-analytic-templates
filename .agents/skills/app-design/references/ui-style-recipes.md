@@ -139,6 +139,7 @@ Any cluster of related interactive elements — form fields, filter panels, tool
 - **Elevation**: choose shadow, border, or both to separate cards from the page. `shadow-4` + `border` is the baseline default; shadow-only, border-only, or borderless designs are all valid depending on the aesthetic direction.
 - **Internal spacing**: use `px-*` / `py-*` on content areas, `gap-*` between sections
 - **Structure**: compose from header, content, footer sections — don't enforce rigid slots
+- **Visuals**: `VegaVisual` and `DataGrid` draw their own card — pass these classes to `containerClassName` instead of wrapping them.
 
 ### Inputs
 
@@ -168,8 +169,8 @@ These are often left unstyled — don't. They should match the aesthetic directi
 ### Tabs
 
 - **Variants**: filled (items against `bg-muted`) or line (underline indicator) — pick what fits the design
-- **Active indicator**: filled uses `bg-background shadow-sm`; line uses a pseudo-element underline
-- **Typography**: `text-sm font-medium`, inactive color at reduced opacity (`text-foreground/60`)
+- **Active indicator**: filled uses `bg-background shadow-2`; line uses a pseudo-element underline
+- **Typography**: `text-300 font-medium`, inactive color at reduced opacity (`text-foreground/60`)
 - **Orientation**: support both horizontal and vertical when using Radix Tabs
 
 ### Dialogs / Modals
@@ -192,14 +193,14 @@ These are often left unstyled — don't. They should match the aesthetic directi
 
 - **Surface**: inverted (`bg-foreground text-background`) by default; adapt to match your aesthetic
 - **Radius**: match the app's radius scale
-- **Typography**: `text-xs`, use `text-balance` for wrapping
+- **Typography**: `text-200`, use `text-balance` for wrapping
 - **Arrow**: small rotated square matching tooltip background
 - **Delay**: 0ms default for immediate feedback
 
 ### Badges
 
 - **Shape**: `rounded-full` for pill shape by default; use the app's radius scale for angular aesthetics
-- **Typography**: `text-xs font-medium`
+- **Typography**: `text-200 font-medium`
 - **Spacing**: tight — `px-2 py-0.5`
 
 ### Skeletons / Loading

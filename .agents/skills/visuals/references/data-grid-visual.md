@@ -30,6 +30,7 @@ const { bodyTable, grandTotalTable } = toRollupDataTables(
   grandTotals={{ position: "bottom", data: grandTotalTable }}
   onFilterChange={handleFilterChange}
   theme={theme}
+  header={{ title: "Revenue by Region", subtitle: "Last 12 months" }}
 />
 ```
 
@@ -44,6 +45,7 @@ Use DataGrid-computed totals only for additive sums or a count of fetched leaf r
   data={dataTable}
   grandTotals={{ position: "bottom" }}
   theme={theme}
+  header={{ title: "Revenue by Region", subtitle: "Last 12 months" }}
 />
 ```
 

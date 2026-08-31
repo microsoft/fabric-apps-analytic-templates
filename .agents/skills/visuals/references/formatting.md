@@ -16,11 +16,13 @@ Formats defined in `columnMetadata` are auto-applied by `VegaVisual` to axes, le
 
 - If only one series of data is available, hide the legend.
 - When a legend is present, always use color encoding.
-- **Consistent categorical colors**: When a categorical dimension appears in visuals or UI, define a shared color map — `scale.domain` + `scale.range` in Vega-Lite, or a constants object for CSS. Never rely on Vega's default auto-assigned palette. Before writing the scale, **discover the distinct values** the query returns, then set `domain` and `range` to arrays of **equal length**.
+- **Theme-aware colors**: For ordinary categorical color encodings, omit `scale.range`, `scale.scheme`, and fixed color values so Vega uses the palette supplied by `useCssTheme()`.
+- **Stable category mapping**: To keep category colors consistent across visuals, discover the distinct values and set `scale.domain` only. The theme palette supplies the range.
+- **Intentional fixed colors**: Use color overrides only when colors have intrinsic semantic meaning (for example, increase/decrease/subtotal) or when the user explicitly requests them. These overrides replace the theme palette.
 
 ### Categorical Color Palette
 
-The base Vega-Lite theme includes a 10-color categorical palette. These colors are a starting point, not a strict requirement — you may extend, replace, or create an entirely new palette that better suits the data or the app's aesthetic direction.
+`useCssTheme()` reads `--color-data-1` through `--color-data-10` into the Vega-Lite categorical palette. When none are defined, `VegaVisual` uses its default palette.
 
 ### Custom Data Color Accessibility
 
@@ -120,13 +122,11 @@ The visual components read their styling from CSS custom properties on the page.
 
 | What to change | CSS variable(s) |
 |---|---|
-| Colors | `--color-foreground`, `--color-background`, `--color-brand-*`, etc. |
+| Colors | `--color-foreground`, `--color-background`, `--color-brand-*`, `--color-data-1` through `--color-data-10`, etc. |
 | Font family | `--font-base`, `--font-monospace` |
 | Font sizes | `--text-200` through `--text-600` |
 | Spacing | `--spacing-200`, `--spacing-300`, etc. |
 | Border radius | `--radius-sm`, `--radius-md`, etc. |
-
-> **Note:** The category color palette (series colors in charts) is built into the visual theme and is not currently customizable via CSS.
 
 ### Named Styles
 

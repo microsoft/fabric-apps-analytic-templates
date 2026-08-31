@@ -5,7 +5,8 @@ description: >
   or other visual representations of data into their project.
   Use VegaVisual and DataGrid components to create these visuals, 
   utilizing the shared DataTable input, formatting, theme, and interactivity.
-  Covers the onInteraction selection/click events host apps consume, named
+  Covers the VisualContainer chrome every visual gets by default,
+  the onInteraction selection/click events host apps consume, named
   multi-table data input for layered overlays and reference lines, and
   Vega-Lite native selections.
 ---
@@ -65,15 +66,28 @@ const inlineSpec = {
 
 For the `DataTable` schema and `ColumnDef` fields, see [references/data-table.md](references/data-table.md).
 
+## VisualContainer defaults for every visual
+
+`VegaVisual` and `DataGrid` wrap **themselves** in a `VisualContainer` by default. The container draws the chrome — border, padding, header (title/subtitle) — plus its built-in actions, all enabled by default. Do not add a wrapper of your own unless absolutely required.
+
+```tsx
+<VegaVisual
+    spec={vegaLiteSpec}
+    data={dataTable}
+    theme={theme}
+    header={{ title: "Revenue by Region", subtitle: "Last 12 months" }}
+/>
+
+<DataGrid data={dataTable} theme={theme} header={{ title: "Top Products" }} />
+```
+
+Anything the default container doesn't cover — custom actions, programmatic capture, the same chrome around a non-visual etc: [references/visual-container.md](references/visual-container.md).
+
 ## Formatting & Theme
 - **Formatting rules**: Number formatting, color palettes, chart-specific encoding rules, highlighting guidelines, and a default theme. See [references/formatting.md](references/formatting.md).
 
 ## Custom visuals
 Always use the above mentioned ways to create visual when possible. If the user's request doesn't allow creation using the above methods, ask the user if they are ok with using another library for creating the visual. If they are ok with it, use the library to create the visual. If they are not ok with it, then build that visual from scratch using HTML, CSS, and JS/TS. Make sure to ask the user for any specific requirements they have for the visual, such as colors, labels, etc.
-
-## Container Layout
-
-- **`DataGrid`** — the direct parent must apply `overflow-auto` so content remains scrollable when it exceeds the container bounds (many rows).
 
 ## Interactivity
 

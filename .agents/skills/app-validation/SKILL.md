@@ -39,10 +39,12 @@ Only take a screenshot if the user explicitly requests one. Use `snapshot` (YAML
 ## Visual Consistency Checks
 
 - Verify key layout containers have non-zero computed padding and gap values. Zero spacing usually indicates an invalid token class mapping.
-- Verify chart background matches parent card background color.
+- Verify each visual's card background matches the app's other cards — it comes from `containerClassName`, not from a wrapper div.
+- Verify card chrome is not painted twice — by both a wrapper and the visual's own container.
 - Verify bar and arc stroke colors match card background (not primary text color).
 - Verify axis label and data-label colors are consistent across charts using shared foreground-secondary semantics.
 - Verify grouped/multi-series bar charts do not show auto-injected data labels unless explicitly requested by design.
+- Verify every visual displays its expected content. Charts must render visible, correctly positioned data marks; grids must render their expected headers and cells.
 - Verify chart render height is healthy for each chart canvas/SVG. Treat charts rendering below ~100px as suspicious and below ~50px as likely squished.
 - Verify standalone (non-grid) chart sections use definite `height` instead of only `minHeight` when chart wrappers use `h-full`.
 - Compare computed `fontSize`, `fontFamily`, and `color` across related `input`, `select`, and `button` controls in the same toolbar/filter row.
@@ -53,29 +55,57 @@ Only take a screenshot if the user explicitly requests one. Use `snapshot` (YAML
 
 The URL under test should be `*.fabric.microsoft.com` and contain `devUri=`, so the app is being rendered **inside the Fabric portal as a deeply-nested iframe** (`portal → *pbiabd.powerbi.com/appbackend → http://localhost:5173`). Use the template's wired-up flow instead of the generic `open` recipe.
 
-### One-liner
+### Provisioning preflight
+
+Before launching the browser, check that the combined values in `.env.local` and `.env.fabric` include all three values required to identify an existing Fabric AppBackend:
+
+- `VITE_FABRIC_PORTAL_URL`
+- `VITE_FABRIC_WORKSPACE_ID`
+- `VITE_FABRIC_ITEM_ID`
+
+If any value is missing, provision the app using the exact target Fabric workspace URI supplied by the user or task:
+
+```bash
+npx rayfin up --workspace-uri "<target-workspace-uri>"
+```
+
+If no target workspace URI was supplied, ask the user for one. `rayfin up` provisions the Fabric AppBackend and writes the required values to the environment files; it does not need to be rerun before every validation when valid deployment configuration already exists.
+
+### Start the development server
+
+Run the Vite development server in a separate, long-running terminal and confirm that the URL reported by Vite responds before opening the Fabric portal:
+
+```bash
+npm run dev
+```
+
+If Vite uses a non-default URL (a URL that is not `http://localhost:5173`), set `DEV_URL` to that URL in the same shell command that runs `npm run test:fabric`.
+
+### Launch the Fabric browser session
 
 ```bash
 npm run test:fabric
 ```
 
-This runs `scripts/open-fabric-portal.mjs` which composes the embed URL from the `VITE_FABRIC_*` env vars (written into `.env.local` / `.env.fabric` by `npx rayfin up`) and launches a named persistent session with the right Chromium flags:
+This runs `scripts/open-fabric-portal.mjs`, which composes the embed URL from the `VITE_FABRIC_*` environment files and launches a named persistent session with the right Chromium flags:
 
 ```bash
 playwright-cli -s=fabric open --persistent --config=.playwright-config.json "<embed-url>"
 ```
+
+`npm run test:fabric` only opens the browser session. It does not provision the AppBackend, start the development server, or perform the required checks. Use subsequent `playwright-cli -s=fabric` commands to inspect and validate the embedded app frame.
 
 ### Why three pieces are required
 
 | Piece | Reason |
 | --- | --- |
 | `--persistent` profile | Real AAD sign-in cannot be mocked. The user signs in once; cookies persist for subsequent `playwright-cli -s=fabric open` calls. |
-| `.playwright-config.json` Chromium flag | Disables `BlockInsecurePrivateNetworkRequests` / `LocalNetworkAccessChecks` so the HTTPS Fabric portal can iframe `http://localhost:5173`. Header-based opt-in does **not** work for top-level iframe navigations. |
+| `.playwright-config.json` Chromium flag | Disables `BlockInsecurePrivateNetworkRequests` / `LocalNetworkAccessChecks` so the HTTPS Fabric portal can iframe the local Vite server. Header-based opt-in does **not** work for top-level iframe navigations. |
 | Vite `localNetworkAccessPlugin` | Sends `Access-Control-Allow-Private-Network: true` and answers LNA preflights, so fetch/XHR subresources from the embedded app pass. Belt-and-suspenders with the browser flag. |
 
 ### Frame discovery snippet
 
-The app loads three frames deep. Use this single `run-code` to locate it:
+The app loads three frames deep. Use this single `run-code` to locate it (replace `localhost:5173` with the actual Vite URL if different):
 
 ```js
 async page => {
@@ -98,7 +128,7 @@ If `blockedByLNA: true`, the Chromium flag isn't taking effect — confirm `--co
 
 ### Console error filter
 
-The Fabric portal emits its own errors that are **not app bugs**. Treat as portal noise (ignore) - only errors where the source URL starts with `http://localhost:5173` count as app errors.
+The Fabric portal emits its own errors that are **not app bugs**. Treat them as portal noise and ignore them. Only errors whose source origin matches the embedded app server’s origin count as app errors.
 
 See [`references/fabric-embed.md`](references/fabric-embed.md) for the full frame walker, `classifyConsoleMessages` helper, and troubleshooting matrix.
 

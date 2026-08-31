@@ -32,7 +32,13 @@ const data: DataTable = {
   ]
 }
 
-<VegaVisual spec={spec} data={data} theme={theme} style={{ height: 400 }} />
+<VegaVisual
+  spec={spec}
+  data={data}
+  theme={theme}
+  style={{ height: 400 }}
+  header={{ title: "Revenue by Region", subtitle: "Last 12 months" }}
+/>
 ```
 
 ## Valid spec structures
