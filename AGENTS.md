@@ -159,7 +159,7 @@ Recommend following these steps when building or modifying the dashboard unless 
 The workflow has three distinct phases:
 - **Authoring phase** (Steps 1–3): You explore data and validate queries using the Fabric CLI `execute` command (backed by the same SDK used at runtime). No app code is written yet.
 - **Design phase** (Step 4): You design the web app UX before writing any runtime code. This requires the [app-design skill](.agents/skills/app-design/SKILL.md). You create theming tokens in `src/global.css` according to the theming direction and plan how to cohesively apply them across components.
-- **App code phase** (Steps 5–7): You write React components that fetch data at runtime using the Fabric SDK.
+- **App code and validation phase** (Steps 5–6): You write React components that fetch data at runtime using the Fabric SDK, then validate the app in its Fabric portal embed.
 
 ### 1. Ask the user for a semantic model
 
@@ -271,8 +271,17 @@ function RevenueByRegionChart() {
   // Pass the DataTable to VegaVisual (chart) or DataGrid (table) via the data prop.
   return (
     <div>
-      <VegaVisual spec={vegaLiteSpec} data={dataTable} theme={theme} />
-      <DataGrid data={dataTable} theme={theme} />
+      <VegaVisual
+        spec={vegaLiteSpec}
+        data={dataTable}
+        theme={theme}
+        header={{ title: "Revenue by Region" }}
+      />
+      <DataGrid
+        data={dataTable}
+        theme={theme}
+        header={{ title: "Revenue detail" }}
+      />
     </div>
   );
 }
@@ -286,7 +295,7 @@ For deeper details on the SDK client, caching internals, and advanced query opti
 
 ### 6. Final validation
 
-Follow the [app-validation](.agents/skills/app-validation/SKILL.md) skill (what to check, performance rules, Fabric portal embed flow) together with the [playwright-cli](.agents/skills/playwright-cli/SKILL.md) skill (the tool itself) to validate the app in the browser. Fix any issues before considering the task complete. The app can **only** be ran and validated with the Fabric portal embed flow, app-validation skill covers how to do this with the right browser flags and auth setup.
+Follow the [app-validation](.agents/skills/app-validation/SKILL.md) skill (provisioning preflight, required checks, performance rules, and Fabric portal embed flow) together with the [playwright-cli](.agents/skills/playwright-cli/SKILL.md) skill (the tool itself) to validate the app in the browser. Use only the target Fabric workspace URI supplied by the user or task. If deployment configuration is missing and no target workspace URI was supplied, ask the user for one before proceeding. The app can only be run and validated with the Fabric portal embed flow; the app-validation skill covers the required browser flags and authentication setup. Fix any issues before considering the task complete.
 
 ## Critical Rules
 

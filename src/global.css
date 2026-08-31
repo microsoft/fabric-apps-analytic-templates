@@ -48,6 +48,15 @@
   --color-input: #e0e0e0;                                            /* input field borders */
   --color-ring: #0f6cbd;                                             /* focus rings */
 
+  /* Elevation shadows — Fluent UI v9 ramp, keyed by resting elevation in px.
+     Usage: shadow-* (e.g. shadow-8, shadow-64) */
+  --shadow-2:  0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14);
+  --shadow-4:  0 0 2px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.14);
+  --shadow-8:  0 0 2px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.14);
+  --shadow-16: 0 0 2px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.14);
+  --shadow-28: 0 0 8px rgba(0, 0, 0, 0.12), 0 14px 28px rgba(0, 0, 0, 0.14);
+  --shadow-64: 0 0 8px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.14);
+
   --radius-none: 0;
   --radius-sm: 2px;
   --radius-md: 4px;

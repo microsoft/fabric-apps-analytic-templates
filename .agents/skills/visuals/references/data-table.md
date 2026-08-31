@@ -11,8 +11,8 @@ const theme = useCssTheme();
 
 const data = {
   columns: [
-    { name: "month", displayName: "Month" },
-    { name: "revenue", displayName: "Revenue", format: "$#,0.00" },
+    { name: "month", displayName: "Month", semanticType: "Month" },
+    { name: "revenue", displayName: "Revenue", format: "$#,0.00", semanticType: "Amount" },
   ],
   rows: [
     ["January", 12500],
@@ -89,8 +89,63 @@ Refer to the package README.md for detailed information about the component api 
                     "$comment": "A VBA/ECMA-376 format string (e.g., `#,##0.00`, `0.00%`, and `mm/dd/yyyy`).  May be converted to another representation (e.g., D3.js format string) by leaf components as needed.",
                     "description": "A VBA/ECMA-376 format string for formatting data for output, e.g., in tooltips, data labels, DataGrid table cells.",
                     "type": "string"
+                },
+                "semanticType": {
+                    "$ref": "#/$defs/SemanticType"
                 }
             }
+        },
+        "SemanticType": {
+            "title": "SemanticType",
+            "description": "One of ~40 pre-defined semantic types, helping to determine how to visualize the data based on its implied semantics.",
+            "$comment": "NOTE: Only used by Flint specifications given to the VegaVisual component.",
+            "type": "string",
+            "enum": [
+                "DateTime",
+                "Date",
+                "Time",
+                "Timestamp",
+                "Year",
+                "Quarter",
+                "Month",
+                "Week",
+                "Day",
+                "Hour",
+                "YearMonth",
+                "YearQuarter",
+                "YearWeek",
+                "Decade",
+                "Duration",
+                "Quantity",
+                "Count",
+                "Amount",
+                "Price",
+                "Percentage",
+                "Temperature",
+                "Profit",
+                "PercentageChange",
+                "Sentiment",
+                "Correlation",
+                "Rank",
+                "ID",
+                "Score",
+                "Latitude",
+                "Longitude",
+                "Country",
+                "State",
+                "City",
+                "Region",
+                "Address",
+                "ZipCode",
+                "Category",
+                "Name",
+                "Status",
+                "Boolean",
+                "Direction",
+                "Range",
+                "Number",
+                "Unknown"
+            ]
         }
     }
 }

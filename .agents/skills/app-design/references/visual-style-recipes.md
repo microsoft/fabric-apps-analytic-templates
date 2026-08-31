@@ -33,13 +33,7 @@ const theme = useCssTheme();
 <VegaVisual spec={spec} data={dataTable} theme={theme} />
 ```
 
-Edit `--color-*` values in `global.css` (and the `.dark` block) to change chart colors — the hook bridges them into the JS theme object the visuals consume. Other CSS variables (spacing, fonts, radii, app-level colors) are picked up directly via the cascade.
-
-Validate that chart data colors (series palettes and categorical hues) fit the app's current visual theme and design direction. If default data colors feel out of place, adjust the palette so it better supports the intended mood, contrast, and hierarchy.
-
-### Data color alignment
-
-Validate that chart data colors (series palettes and categorical hues) fit the app's current visual theme and design direction. If default data colors feel out of place, adjust the palette so it better supports the intended mood, contrast, and hierarchy.
+Edit visual color variables in `global.css`, with dark-mode overrides in the `.dark` block. Customize categorical chart colors with `--color-data-1` through `--color-data-10`.
 
 ### Chart typography alignment
 
@@ -63,19 +57,17 @@ Every Vega-Lite spec should set `width: "container"` and `height: "container"` �
 
 ### Chart container height chain
 
-Charts must fill their card's visible height — no dead space, no cropping. This requires a **complete height chain** from the grid/flex cell down to the chart:
+Charts must fill their cell's visible height — no dead space, no cropping. This requires a **complete height chain** from the grid/flex cell down to the chart:
 
 1. **Grid/flex cell** → provides the height
-2. **Card wrapper** → `h-full` so the cell's height becomes definite
-3. **Card content area** → `flex-1 min-h-0`
-4. **Chart wrapper** → `flex flex-col flex-1 min-h-0`
-5. **VegaVisual** → fills its parent
+2. **Layout wrapper** → `h-full` so the cell's height becomes definite
+3. **VegaVisual / DataGrid** → self-frames in a `VisualContainer` that fills the wrapper and sizes the visual
+
+The wrapper is for *layout only* — grid placement and height. Card chrome belongs on the VisualContainer.
 
 If a chart appears squished, trace the height chain upward — typically a missing `h-full` on an intermediate wrapper.
 
 Do not wrap `<VegaVisual>` in a fixed-height container.
-
-The direct parent of `<DataGrid>` should use `overflow-auto flex-1 min-h-0` for row scrolling.
 
 ### `minHeight` vs `height` for chart containers
 
@@ -89,15 +81,14 @@ Use layout-aware checks:
 - Grid layouts: `minHeight` on the grid container is generally acceptable because grid tracks provide definite row heights.
 - Standalone full-width chart sections: prefer explicit `height` on the section/container when using `h-full` card/chart wrappers.
 
-### Chart titles in cards
+### Chart titles
 
-Do NOT put titles in the Vega-Lite spec `title` property for dashboard cards. Render as a heading element in the card header instead. Scale the heading size to match the app's type hierarchy.
-
+Do NOT put titles in the Vega-Lite spec `title` property or hand-roll a heading element. Pass the title through the visual's `header={{ title, subtitle }}` prop (see the [visuals skill](../../visuals/SKILL.md#visualcontainer-defaults-for-every-visual)).
 - The title should summarize what the chart shows in plain language (e.g., "Monthly Revenue by Region", "Top 10 Products by Units Sold").
 - Derive the title from the data fields and the intent of the visualization — do not use generic titles like "Chart" or "Bar Chart".
 - If the user provides a title, use it as-is. Otherwise, infer a good title from the query and encodings.
 
-For standalone charts (no card wrapper), use the spec `title` with anchor `start`, semibold weight, and primary text color.
+For standalone charts (no card wrapper), set the `chromeless` prop on the visual and use the spec `title` with anchor `start`, semibold weight, and primary text color.
 
 > **Layout creativity**: Consider mixed card spans, a full-width hero row, asymmetric column ratios, or generous negative space between sections. The layout should reinforce the aesthetic direction.
 
@@ -184,5 +175,6 @@ const theme = useCssTheme();
   theme={theme}
 />
 ```
+`DataGrid` scrolls its own rows — it needs a definite height from the layout around it (`flex-1 min-h-0` in a flex column), never `overflow-auto`.
 
 Font, spacing, and border styles are controlled by CSS variables in `global.css` and cascade automatically.
