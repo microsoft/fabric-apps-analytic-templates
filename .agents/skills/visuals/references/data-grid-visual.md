@@ -57,12 +57,12 @@ Use DataGrid-computed totals only for additive sums or a count of fetched leaf r
 
 ### Theming
 
-Pass the `theme` prop to render correctly in both light and dark modes. Use the `useCssTheme()` hook from `@microsoft/fabric-visuals` — it derives the theme from `--color-*` CSS variables on the page and updates automatically when the theme changes:
+Pass the global theme from `useThemeContext()` to the `theme` prop so the component updates automatically in light and dark modes:
 
 ```tsx
-import { useCssTheme } from "@microsoft/fabric-visuals";
+import { useThemeContext } from "@/hooks/theme.context";
 
-const theme = useCssTheme();
+const { theme } = useThemeContext();
 
 <DataGrid data={dataTable} theme={theme} />
 ```

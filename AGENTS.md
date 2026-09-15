@@ -23,6 +23,7 @@ src/
 ├── App.tsx                # Main dashboard layout
 ├── ErrorFallback.tsx      # Error boundary fallback UI
 ├── global.css             # Tailwind v4 @theme design tokens
+├── data-palette-presets.json  # Alternative light/dark data color palettes
 ├── components/            # Dashboard UI components (cards, charts, banners)
 ├── hooks/                 # React hooks (data fetching, theming)
 ├── lib/                   # Utilities, Fabric client
@@ -238,12 +239,13 @@ Use `toDataTable()` from `src/lib/to-data-table.ts` to convert the SDK's `QueryT
 ```tsx
 import { revenueByRegion } from "@/queries/sales/revenue-by-region";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
+import { useThemeContext } from "@/hooks/theme.context";
 import { toDataTable } from "@/lib/to-data-table";
-import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
+import { VegaVisual } from "@microsoft/fabric-visuals";
 import { DataGrid } from "@microsoft/fabric-datagrid";
 
 function RevenueByRegionChart() {
-  const theme = useCssTheme();
+  const { theme } = useThemeContext();
   const { connection, query, columnMetadata, vegaLiteSpec } = revenueByRegion({
     categories: ["Category A"],
   });

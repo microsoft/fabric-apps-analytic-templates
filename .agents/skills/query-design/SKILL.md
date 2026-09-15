@@ -30,6 +30,7 @@ Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll 
 | Filling dimension gaps | TypeScript (stitch dimension list into sparse results) |
 | Reshaping (pivot, unpivot) | TypeScript |
 | Column display names | `columnMetadata` in factory file |
+| Vega-Lite / DataGrid field identifiers | `columnMetadata.name` (bracket-free alias) |
 | Number/date formatting | `columnMetadata.format` / Vega-Lite spec |
 | User-facing sort order | TypeScript / Vega-Lite `sort` / DataGrid `sort` |
 | Decorative labels, icons | DataGrid `cellRenderer` or Vega-Lite condition |
@@ -47,7 +48,7 @@ Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll 
 ### Prefer
 
 - `SUMMARIZECOLUMNS` for grouped aggregation — it also drops BLANK-measure rows, keeping payloads small
-- DAX's natural column names (`'Table'[Column]`, `[Measure]`) mapped via `columnMetadata.displayName`
+- DAX's natural column names (`'Table'[Column]`, `[Measure]`) as `columnMetadata` **keys**, mapped to a bracket-free `name` and a human-readable `displayName`
 - Raw typed values from DAX — format via `columnMetadata.format` or Vega-Lite, never `FORMAT()`
 - Model-defined format strings (from `INFO.VIEW.MEASURES()`) over invented ones
 - Multiple lightweight queries for independently shaped datasets; one flagged rollup query for a DataGrid body and grand total
@@ -55,7 +56,8 @@ Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll 
 
 ### Avoid
 
-- `SELECTCOLUMNS` solely for renaming — use `columnMetadata.displayName` instead
+- `SELECTCOLUMNS` solely for renaming — use `columnMetadata` (`name` + `displayName`) instead
+- Reusing the raw DAX column name as `columnMetadata.name` — `[` `]` `.` make the visual read `undefined`
 - `UNION` to mix body and total grains — use `ROLLUPADDISSUBTOTAL` and partition its flagged rows
 - `FORMAT()` in DAX — converts to text, breaks sorting and charting
 - Converting BLANK to `0` / `""` / `"N/A"` in DAX — causes result-set explosion
