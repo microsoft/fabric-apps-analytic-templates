@@ -17,6 +17,12 @@ export interface AuthContextValue {
     isLoading: boolean;
     /** Last error from the embedded auth flow, if any. */
     error: Error | null;
+    /** Start an interactive Fabric sign-in. */
+    signIn: () => void;
+    /** True while interactive Fabric sign-in is in flight. */
+    isSigningIn: boolean;
+    /** Last error from interactive Fabric sign-in, if any. */
+    signInError: Error | null;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

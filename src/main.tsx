@@ -7,6 +7,7 @@
 
 import { createRoot } from 'react-dom/client';
 import { ErrorBoundary } from "react-error-boundary";
+import { useCssTheme } from "@microsoft/fabric-visuals";
 
 import App from './App.tsx';
 import { ErrorFallback } from './ErrorFallback';
@@ -22,9 +23,10 @@ const rayfinAuthService = bootstrapAuth();
 
 function Root() {
     const { isDark, toggleTheme } = useAppTheme();
+    const theme = useCssTheme();
 
     return (
-        <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+        <ThemeContext.Provider value={{ isDark, toggleTheme, theme }}>
             <ErrorBoundary FallbackComponent={ErrorFallback}>
                 <AuthProvider rayfinAuthService={rayfinAuthService}>
                     <AuthGate>

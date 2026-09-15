@@ -3,11 +3,12 @@
 Both `VegaVisual` and `DataGrid` accept an optional `data` prop of type `DataTable`. This is a row-major tabular JSON format.
 
 ```tsx
-import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
+import { useThemeContext } from "@/hooks/theme.context";
+import { VegaVisual } from "@microsoft/fabric-visuals";
 import { DataGrid } from "@microsoft/fabric-datagrid";
 import { isDataTable } from "@microsoft/fabric-visuals-core";
 
-const theme = useCssTheme();
+const { theme } = useThemeContext();
 
 const data = {
   columns: [

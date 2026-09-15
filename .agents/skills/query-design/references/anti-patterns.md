@@ -230,6 +230,8 @@ export const columnMetadata: ColumnMetadataMap = {
 
 The `columnMetadata` provides: `name` (cleaned identifier for Vega-Lite field references), `displayName` (human-readable caption for headers/axes), `format` (VBA/ECMA-376 format string for rendering — same syntax as the model's `FormatString`).
 
+> **`name` must be bracket-free.** Never copy the raw DAX column name into `name`. Vega-Lite reads `.`, `[`, and `]` in a field reference as property/array accessors, so `Store[StoreNumberName]` silently resolves to `undefined` and the visual renders empty. See [Vega-Lite field names](../../visuals/references/vega-lite-visual.md#field-names).
+
 > **When SELECTCOLUMNS is appropriate:** Use it to project a subset of columns, compute derived columns (`RELATED(...)`), or reshape table structure — not as a cosmetic renaming layer.
 
 ## Anti-Pattern 7: Converting BLANK to placeholder values

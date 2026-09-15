@@ -40,13 +40,12 @@ The chart and data grid components share a unified `data` prop of type `DataTabl
 **Multiple tables in one visual**: the `data` prop also accepts a `Record<string, DataTable>` for specs that bind separate layers to more than one dataset by name such as layered overlays, reference lines, and axis spines. See [references/multi-data-input.md](references/multi-data-input.md).
 
 ```tsx
-import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
+import { useThemeContext } from "@/hooks/theme.context";
+import { VegaVisual } from "@microsoft/fabric-visuals";
 import { DataGrid } from "@microsoft/fabric-datagrid";
 import type { DataTable } from "@microsoft/fabric-visuals-core";
 
-// useCssTheme() reads --color-* vars from the page and updates automatically
-// when the theme changes (e.g. dark-mode toggle adds/removes the .dark class).
-const theme = useCssTheme();
+const { theme } = useThemeContext();
 
 // Charts — pass a DataTable and Vega-Lite spec
 <VegaVisual spec={vegaLiteSpec} data={dataTable} theme={theme} />

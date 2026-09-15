@@ -6,17 +6,20 @@
 //-----------------------------------------------------------------------
 
 import { createContext, useContext } from "react";
+import type { VisualTheme } from "@microsoft/fabric-visuals-core";
 
 interface ThemeContextValue {
     isDark: boolean;
     toggleTheme: () => void;
+    theme: VisualTheme;
 }
 
-export const ThemeContext = createContext<ThemeContextValue>({
-    isDark: false,
-    toggleTheme: () => {},
-});
+export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-export function useThemeContext() {
-    return useContext(ThemeContext);
+export function useThemeContext(): ThemeContextValue {
+    const context = useContext(ThemeContext);
+    if (context === undefined) {
+        throw new Error("useThemeContext must be used within a ThemeContext.Provider");
+    }
+    return context;
 }

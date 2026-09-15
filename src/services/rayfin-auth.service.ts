@@ -8,6 +8,7 @@
 import RayfinClient from "@microsoft/rayfin-client";
 import type { OpaqueSession } from "@microsoft/rayfin-auth";
 import {
+    ensureSignedInWithFabric,
     initEmbeddedAuth as sdkInitEmbeddedAuth,
     type FabricAuthOptions,
 } from "@microsoft/rayfin-auth-provider-fabric";
@@ -21,6 +22,13 @@ export interface IAuthService {
      * that case.
      */
     initEmbeddedAuth(): Promise<OpaqueSession | null>;
+    /**
+     * Start the Fabric brokered sign-in waterfall.
+     *
+     * Call this directly from a synchronous user gesture because the SDK may
+     * open a broker tab.
+     */
+    signIn(): Promise<OpaqueSession>;
 }
 
 /**
@@ -76,5 +84,9 @@ class RayfinAuthService implements IAuthService {
 
     async initEmbeddedAuth(): Promise<OpaqueSession | null> {
         return sdkInitEmbeddedAuth(this.client.auth, this.fabricOptions);
+    }
+
+    signIn(): Promise<OpaqueSession> {
+        return ensureSignedInWithFabric(this.client.auth, this.fabricOptions);
     }
 }

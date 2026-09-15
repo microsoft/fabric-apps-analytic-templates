@@ -21,20 +21,6 @@ All visual styling flows from CSS custom properties defined in `src/global.css`.
 
 See the `formatting.md` reference for the full list of CSS variables and how to change them.
 
-### Custom theme colors
-
-The `theme` prop on `VegaVisual` and `DataGrid` controls axis colors, text fills, grid lines, and background. Use the `useCssTheme()` hook to derive it from the `--color-*` variables in `global.css` — the hook updates automatically when the theme changes (e.g. dark-mode toggle adds/removes the `.dark` class):
-
-```tsx
-import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
-
-const theme = useCssTheme();
-
-<VegaVisual spec={spec} data={dataTable} theme={theme} />
-```
-
-Edit visual color variables in `global.css`, with dark-mode overrides in the `.dark` block. Customize categorical chart colors with `--color-data-1` through `--color-data-10`.
-
 ### Chart typography alignment
 
 Validate that chart text styling fits the app's current theme and typography direction. If chart labels, titles, legends, or axis text feel disconnected from the rest of the UI, update chart font family, weight, and size settings so they align with the app's token-driven type system.
@@ -163,18 +149,4 @@ A single `cornerRadiusEnd` rounds corners on the wrong side for negative values.
 
 ## DataGrid
 
-Pass theme colors to the DataGrid via the `theme` prop. Use `useCssTheme()` to bridge `--color-*` variables in `global.css` to the JS theme object:
-
-```tsx
-import { useCssTheme } from "@microsoft/fabric-visuals";
-
-const theme = useCssTheme();
-
-<DataGrid
-  data={dataTable}
-  theme={theme}
-/>
-```
 `DataGrid` scrolls its own rows — it needs a definite height from the layout around it (`flex-1 min-h-0` in a flex column), never `overflow-auto`.
-
-Font, spacing, and border styles are controlled by CSS variables in `global.css` and cascade automatically.

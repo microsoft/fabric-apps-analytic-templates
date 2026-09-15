@@ -5,7 +5,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { OpaqueSession } from "@microsoft/rayfin-auth";
 
 import { IAuthService } from "@/services/rayfin-auth.service";
@@ -23,8 +23,8 @@ interface AuthProviderProps {
  * - When loaded inside a Fabric iframe (`?fabricEmbedded=true`), calls
  *   `initEmbeddedAuth` to acquire a Rayfin session via postMessage.
  * - When loaded standalone, `initEmbeddedAuth` returns `null` immediately
- *   and the provider settles in an unauthenticated state and `<AuthGate>` 
- *   renders the "not embedded" notice.
+ *   and the provider settles in an unauthenticated state so `<AuthGate>`
+ *   can offer interactive Fabric sign-in.
  *
  * Consume the session with the `useAuth` hook.
  */
@@ -32,6 +32,9 @@ export function AuthProvider({ children, rayfinAuthService }: AuthProviderProps)
     const [session, setSession] = useState<OpaqueSession | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const [isSigningIn, setIsSigningIn] = useState(false);
+    const [signInError, setSignInError] = useState<Error | null>(null);
+    const signInRequestRef = useRef<Promise<OpaqueSession> | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -56,8 +59,36 @@ export function AuthProvider({ children, rayfinAuthService }: AuthProviderProps)
         };
     }, [rayfinAuthService]);
 
-    if (error)
-        throw error;
+    const signIn = useCallback(() => {
+        if (signInRequestRef.current)
+            return;
+
+        let request: Promise<OpaqueSession>;
+        try {
+            // Keep the SDK invocation in the synchronous click call stack so
+            // its broker window is not blocked as an unsolicited popup.
+            request = rayfinAuthService.signIn();
+        } catch (err) {
+            setSignInError(err instanceof Error ? err : new Error(String(err)));
+            return;
+        }
+
+        signInRequestRef.current = request;
+        setIsSigningIn(true);
+        setSignInError(null);
+
+        void request
+            .then(setSession)
+            .catch((err: unknown) => {
+                setSignInError(err instanceof Error ? err : new Error(String(err)));
+            })
+            .finally(() => {
+                if (signInRequestRef.current === request) {
+                    signInRequestRef.current = null;
+                    setIsSigningIn(false);
+                }
+            });
+    }, [rayfinAuthService]);
 
     const value = useMemo<AuthContextValue>(
         () => ({
@@ -65,9 +96,15 @@ export function AuthProvider({ children, rayfinAuthService }: AuthProviderProps)
             isAuthenticated: session?.isAuthenticated ?? false,
             isLoading,
             error,
+            signIn,
+            isSigningIn,
+            signInError,
         }),
-        [session, isLoading, error],
+        [session, isLoading, error, signIn, isSigningIn, signInError],
     );
+
+    if (error)
+        throw error;
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

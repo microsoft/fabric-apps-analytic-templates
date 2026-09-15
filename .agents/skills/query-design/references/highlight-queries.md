@@ -87,7 +87,7 @@ The host component holds the selection (from another visual's `onInteraction`), 
 
 ```tsx
 function SalesByCategoryChart({ selections }: { selections: DataPointSelection[] | null }) {
-  const theme = useCssTheme();
+  const { theme } = useThemeContext();
   const all = useBaselineTable();
   const highlighted = useHighlightedTable(selections); // scoped CALCULATETABLE query; null when no selection
 
