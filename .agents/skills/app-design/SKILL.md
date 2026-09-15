@@ -24,13 +24,14 @@ Load fonts via Google Fonts (or another CDN) as `<link>` tags in `index.html`, t
 
 ### Theming Workflow
 
-Start by customizing `src/global.css` — this is the single source of truth for the app's visual identity. Every component uses these tokens, so setting them first means the entire UI shifts together.
+Start by customizing `src/global.css` — this is the single source of truth for the app's active visual identity. Every component uses these tokens, so setting them first means the entire UI shifts together.
 
 1. **Colors**: Update the semantic color tokens (`--color-primary`, `--color-background`, `--color-card`, `--color-border`, etc.) in both the `@theme` block and the `.dark` override to match the aesthetic direction. The defaults are neutral blue/grey — make them yours.
-2. **Radius**: Adjust `--radius` (the base radius) and the radius scale to match the tone — sharp/geometric (lower values), soft/rounded (higher values), or pill-shaped (`--radius-full`).
-3. **Fonts**: Update the font family tokens as described in the Typography section above.
-4. **Then build components.** Focus component-level styling on layout, spacing, and element-specific details — not re-specifying colors and radii that the tokens already handle.
-5. **Selective overrides last.** After the base theme is in place, inspect and adjust individual components that need to deviate — an accent-colored card border, a button with a unique hover effect, etc.
+2. **Data palette**: Define the ten data color tokens (`--color-data-1`–`--color-data-10`) as the active palette, with `.dark` overrides, per the [data color rules](../visuals/references/formatting.md#categorical-color-palette). Then populate `src/data-palette-presets.json` with three alternative palettes — never a copy of the active one — each with a kebab-case `id`, a concise `name`, and `colors.light` / `colors.dark` arrays of exactly ten six-digit hex colors in token order.
+3. **Radius**: Adjust `--radius` (the base radius) and the radius scale to match the tone — sharp/geometric (lower values), soft/rounded (higher values), or pill-shaped (`--radius-full`).
+4. **Fonts**: Update the font family tokens as described in the Typography section above.
+5. **Then build components.** Focus component-level styling on layout, spacing, and element-specific details — not re-specifying colors and radii that the tokens already handle.
+6. **Selective overrides last.** After the base theme is in place, inspect and adjust individual components that need to deviate — an accent-colored card border, a button with a unique hover effect, etc.
 
 ---
 
@@ -101,7 +102,7 @@ Include a light/dark mode toggle in the app header or toolbar. Use the `useAppTh
 
 ### UI Token Rules
 
-All styling must use the design tokens defined in `src/global.css` via Tailwind utility classes. Never hardcode raw color values, pixel sizes, or font stacks — raw values are only permitted in `global.css` where the tokens are defined. Refer to `global.css` for available tokens, their values, and expected usage.
+All styling must use the design tokens defined in `src/global.css` via Tailwind utility classes. Never hardcode raw color values, pixel sizes, or font stacks — raw values are only permitted in `global.css` and `src/data-palette-presets.json`. Refer to `global.css` for available tokens, their values, and expected usage.
 
 Examples:
 - `bg-primary text-primary-foreground` — not `bg-blue-600 text-white`

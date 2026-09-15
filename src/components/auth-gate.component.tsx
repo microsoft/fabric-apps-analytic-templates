@@ -14,7 +14,13 @@ interface AuthGateProps {
 }
 
 export function AuthGate({ children }: AuthGateProps) {
-    const { isLoading, isAuthenticated } = useAuth();
+    const {
+        isLoading,
+        isAuthenticated,
+        signIn,
+        isSigningIn,
+        signInError,
+    } = useAuth();
 
     if (isLoading) {
         return (
@@ -28,18 +34,35 @@ export function AuthGate({ children }: AuthGateProps) {
 
     if (!isAuthenticated) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-background p-4">
-                <div className="w-full max-w-md text-center">
-                    <h2 className="mb-2 text-lg font-semibold text-foreground">
-                        Can't open this app outside Fabric
-                    </h2>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                        Opening apps connected to semantic models outside of the Fabric portal is not supported at this time.
+            <div className="flex min-h-screen items-center justify-center bg-background p-400">
+                <div className="w-full max-w-md rounded-xl border border-border bg-card p-800 text-center shadow-8">
+                    <h1 className="mb-200 text-500 font-semibold leading-500 text-card-foreground">
+                        Sign in to open this app
+                    </h1>
+                    <p className="mb-600 text-300 leading-300 text-muted-foreground">
+                        Use your Fabric account to access this app and its connected semantic models.
                     </p>
+                    <button
+                        type="button"
+                        onClick={signIn}
+                        disabled={isSigningIn}
+                        aria-busy={isSigningIn}
+                        className="rounded-lg bg-primary px-400 py-200 text-300 font-semibold text-primary-foreground hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {isSigningIn ? "Signing in…" : "Sign in with Fabric"}
+                    </button>
+                    {signInError && (
+                        <p
+                            role="alert"
+                            className="mt-400 text-300 leading-300 text-destructive"
+                        >
+                            We couldn't sign you in: {signInError.message} Please try again and allow pop-ups for this site.
+                        </p>
+                    )}
                 </div>
             </div>
         );
-    };
-    
+    }
+
     return <>{children}</>;
 }

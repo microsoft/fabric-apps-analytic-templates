@@ -4,10 +4,11 @@ A React component from the `@microsoft/fabric-visuals` package for rendering Veg
 
 ```tsx
 import type { DataTable } from "@microsoft/fabric-visuals-core";
-import { VegaVisual, useCssTheme } from "@microsoft/fabric-visuals";
+import { useThemeContext } from "@/hooks/theme.context";
+import { VegaVisual } from "@microsoft/fabric-visuals";
 import type { VisualizationSpec, VegaLiteConfig } from "@microsoft/fabric-visuals";
 
-const theme = useCssTheme();
+const { theme } = useThemeContext();
 
 const spec: VisualizationSpec = {
   $schema: "https://vega.github.io/schema/vega-lite/v6.json",
@@ -16,14 +17,14 @@ const spec: VisualizationSpec = {
   mark: "bar",
   encoding: {
     x: { field: "category", type: "nominal" },
-    y: { field: "\\[value\\]", type: "quantitative" },
+    y: { field: "value", type: "quantitative" },
   },
 };
 
 const data: DataTable = {
   columns: [
     { name: "category", displayName: "Category" },
-    { name: "[value]", displayName: "Value" },
+    { name: "value", displayName: "Value" },
   ],
   rows: [
     ["A", 28],
@@ -83,6 +84,36 @@ When you need multiple marks (e.g., bars with text labels), put **all** marks in
 
 1. **Never combine `mark` with `layer`** at the same level.
 2. **Each layer entry must define a valid spec at its own level** — it may be a unit spec with its own `mark` (and optional `encoding`), or a nested composition such as another `layer` spec.
+
+## Field names
+
+`field` values must match `ColumnDef.name` from the `DataTable` — **not** the raw DAX column
+name. Vega-Lite parses `.`, `[`, and `]` in a `field` string as nested-property and array
+accessors, so a raw DAX name such as `Store[StoreNumberName]` is read as "property
+`StoreNumberName` of object `Store`", resolves to nothing, and the visual renders `undefined`
+labels with zero-valued marks. No error is raised.
+
+`toDataTable` looks each result column up in `columnMetadata` **by its raw DAX name** and emits
+that entry's `name`. Key the metadata by the raw name and give every column a bracket-free alias:
+
+```typescript
+// ✅ key = raw DAX column name, name = Vega-safe alias
+export const columnMetadata: ColumnMetadataMap = {
+  "Store[StoreNumberName]": { name: "StoreName",  displayName: "Store" },
+  "[Margin YoY]":           { name: "MarginYoY",  displayName: "Gross margin gain", format: "$#,0" },
+};
+```
+
+```json
+{ "encoding": { "y": { "field": "StoreName" }, "x": { "field": "MarginYoY" } } }
+```
+
+```typescript
+// ❌ raw DAX name reused as `name` — every field silently resolves to undefined
+"Store[StoreNumberName]": { name: "Store[StoreNumberName]", displayName: "Store" }
+```
+
+The same alias is what `sort.field`, `tooltip`, and `text` encodings must reference.
 
 ## Encoding Type Selection
 

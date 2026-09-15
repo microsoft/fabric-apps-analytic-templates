@@ -1,3 +1,5 @@
+@layer fabric-visual-tokens, theme, base, fabric-visuals, components, utilities;
+
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));

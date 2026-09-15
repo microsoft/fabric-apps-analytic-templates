@@ -16,13 +16,13 @@ Formats defined in `columnMetadata` are auto-applied by `VegaVisual` to axes, le
 
 - If only one series of data is available, hide the legend.
 - When a legend is present, always use color encoding.
-- **Theme-aware colors**: For ordinary categorical color encodings, omit `scale.range`, `scale.scheme`, and fixed color values so Vega uses the palette supplied by `useCssTheme()`.
+- **Theme-aware colors**: For ordinary categorical color encodings, omit `scale.range`, `scale.scheme`, and fixed color values so Vega uses the palette supplied by the global theme.
 - **Stable category mapping**: To keep category colors consistent across visuals, discover the distinct values and set `scale.domain` only. The theme palette supplies the range.
 - **Intentional fixed colors**: Use color overrides only when colors have intrinsic semantic meaning (for example, increase/decrease/subtotal) or when the user explicitly requests them. These overrides replace the theme palette.
 
 ### Categorical Color Palette
 
-`useCssTheme()` reads `--color-data-1` through `--color-data-10` into the Vega-Lite categorical palette. When none are defined, `VegaVisual` uses its default palette.
+For custom app themes, define all ten categorical colors (`--color-data-1` through `--color-data-10`) in `@theme static`. If `--color-data-1` is missing or invalid, `VegaVisual` uses its built-in palette.
 
 ### Custom Data Color Accessibility
 
