@@ -1,0 +1,53 @@
+name: CodeQL
+
+# -----------------------------------------------------------------------------
+# Weekly CodeQL security scan
+#
+# This workflow runs CodeQL static analysis on a fixed weekly schedule (every
+# Monday) against the `main` branch.
+#
+# Notes:
+#   - GitHub only runs `schedule` triggers from the repository's DEFAULT branch
+#     (`main`), so this file must be merged to `main` to take effect.
+# -----------------------------------------------------------------------------
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    # Every Monday at 16:27 UTC, with no end date.
+    # Minute/hour chosen at random and deliberately off the top of the hour to
+    # avoid GitHub's peak scheduler load (which can delay/drop :00 cron runs).
+    - cron: "27 16 * * 1"
+
+concurrency:
+  group: codeql-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: CodeQL analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
