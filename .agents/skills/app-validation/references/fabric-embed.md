@@ -16,7 +16,7 @@ Three failure modes have to be neutralized before validation can proceed:
 
 | # | Symptom | Root cause | Fix |
 | --- | --- | --- | --- |
-| 1 | Browser lands on `login.microsoftonline.com` and never reaches the app. | Real AAD redirect — cannot be mocked with `sessionStorage.setItem`. | `--persistent` profile so the user signs in once; cookies replay. |
+| 1 | Browser lands on `login.microsoftonline.com` and never reaches the app. | Real AAD redirect — cannot be mocked with `sessionStorage.setItem`. | `--profile=<dir>` browser profile so the user signs in once; cookies replay. |
 | 2 | Innermost `localhost:5173` iframe shows `chrome-error://chromewebdata/`; network log says `net::ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`. | Chromium's [Local Network Access](https://chromestatus.com/feature/5436853517811712) policy blocks the public-origin Fabric portal from embedding `http://localhost`. Iframe **navigations** cannot be opted in via response headers — only subresource fetches can. | Browser flag in `.playwright-config.json` plus the LNA middleware in `vite.config.ts`. |
 | 3 | Console shows portal CSP and MSAL warnings; agents waste time chasing them. | They originate from the Fabric portal itself (Application Insights CSP, MSAL `parseBrokerParams`, sandboxed iframe warnings). None come from the app. | Source-URL filter (see below). |
 
@@ -94,7 +94,7 @@ Treat anything in `appErrors` as a real failure. `portalNoise` is safe to ignore
 | Localhost iframe blank but no error frame | Vite dev server not running | `curl -I http://localhost:5173`. Start with `npm run dev` if needed. |
 | Many CSP / sandbox errors in console | Portal noise | Apply the source-URL filter via `classifyConsoleMessages`; ignore everything outside `appErrors`. |
 | `loaded: true` but DOM empty | Auth handoff failed | Inspect `useAuth()` state via `page.evaluate` inside the `localhost:5173` frame; check that `?fabricEmbedded=true` is on the inner URL. |
-| Sign-in prompted on every run | Persistent profile not retained | The named-session profile is per-shell. Switch to `--profile=.playwright-profile-fabric` for a directory-backed profile that survives reboots. |
+| Sign-in prompted on every run | Browser profile not shared | `npm run test:fabric` passes `--profile=~/.rayfin/browser-profiles/fabric`, a fixed per-user directory that survives reboots and is shared across projects. `--persistent` is keyed by a hash of the project path, so it starts empty in every new project — do not switch back to it. Override the location with `FABRIC_BROWSER_PROFILE`. |
 
 ## References
 

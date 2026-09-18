@@ -24,7 +24,7 @@ Use this skill **together with** the [playwright-cli](../playwright-cli/SKILL.md
 
 **NEVER interact with or validate the token/auth prompt page.** Inside your `run-code` call, inject the auth token via `sessionStorage.setItem` (or `localStorage.setItem`) and mock API responses with `page.route()` **before** calling `page.reload()`. The app must skip the auth prompt and render actual content immediately.
 
-> **Carve-out:** this rule applies to apps that gate themselves behind a token check the agent controls. For real AAD redirects (e.g. the Fabric portal sign-in flow at `login.microsoftonline.com`), do **not** click sign-in buttons or fill credentials, and do **not** mock `sessionStorage` — use a `--persistent` profile instead so the user signs in once and cookies replay on subsequent runs. See [Testing inside the Fabric portal embed](#testing-inside-the-fabric-portal-embed).
+> **Carve-out:** this rule applies to apps that gate themselves behind a token check the agent controls. For real AAD redirects (e.g. the Fabric portal sign-in flow at `login.microsoftonline.com`), do **not** click sign-in buttons or fill credentials, and do **not** mock `sessionStorage` — use the shared `--profile` browser profile instead so the user signs in once and cookies replay on subsequent runs. See [Testing inside the Fabric portal embed](#testing-inside-the-fabric-portal-embed).
 
 ### Skip screenshots unless asked
 
@@ -90,7 +90,7 @@ npm run test:fabric
 This runs `scripts/open-fabric-portal.mjs`, which composes the embed URL from the `VITE_FABRIC_*` environment files and launches a named persistent session with the right Chromium flags:
 
 ```bash
-playwright-cli -s=fabric open --persistent --config=.playwright-config.json "<embed-url>"
+playwright-cli -s=fabric open --profile="$HOME/.rayfin/browser-profiles/fabric" --config=.playwright-config.json "<embed-url>"
 ```
 
 `npm run test:fabric` only opens the browser session. It does not provision the AppBackend, start the development server, or perform the required checks. Use subsequent `playwright-cli -s=fabric` commands to inspect and validate the embedded app frame.
@@ -99,7 +99,7 @@ playwright-cli -s=fabric open --persistent --config=.playwright-config.json "<em
 
 | Piece | Reason |
 | --- | --- |
-| `--persistent` profile | Real AAD sign-in cannot be mocked. The user signs in once; cookies persist for subsequent `playwright-cli -s=fabric open` calls. |
+| `--profile=<dir>` browser profile | Real AAD sign-in cannot be mocked. The user signs in once into a fixed per-user directory (`~/.rayfin/browser-profiles/fabric`, override with `FABRIC_BROWSER_PROFILE`), so cookies replay on later runs and in other projects. Do not substitute `--persistent`: it is keyed by a hash of the project path and starts empty in every new project. |
 | `.playwright-config.json` Chromium flag | Disables `BlockInsecurePrivateNetworkRequests` / `LocalNetworkAccessChecks` so the HTTPS Fabric portal can iframe the local Vite server. Header-based opt-in does **not** work for top-level iframe navigations. |
 | Vite `localNetworkAccessPlugin` | Sends `Access-Control-Allow-Private-Network: true` and answers LNA preflights, so fetch/XHR subresources from the embedded app pass. Belt-and-suspenders with the browser flag. |
 

@@ -37,7 +37,7 @@ description: >
 - Fetching full schema upfront — discover incrementally based on need
 - Re-fetching metadata already discovered in this conversation
 - Using GetSemanticModelSchema or GenerateQuery MCP tools (these are not available)
-- Using `DiscoverArtifacts` to find a semantic model — that MCP tool is not available; use `npx fabric-app-data search` (see [fabric-cli](../fabric-cli/SKILL.md)) instead
+- Using `DiscoverArtifacts` to find a semantic model — that MCP tool is not available. Use `rayfin connector search "<name>" --all-workspaces --type fabric-semanticmodel --json`, or ask the user for the Fabric portal URL, then register the model with `rayfin connector add` (see `AGENTS.md`)
 
 ## Progressive Schema Discovery
 
@@ -114,10 +114,10 @@ For the full query catalog and output column details, see [discovery-queries.md]
 
 ## Running Discovery Queries
 
-Use `npx fabric-app-data query <alias> --query '<DAX>'` to execute INFO queries against a semantic model. For full CLI options (profiles, file input, result limits), see the `fabric-cli` skill.
+Use `npx rayfin connector invoke <name> executeQuery` to execute INFO queries against a semantic model. For prerequisites see `AGENTS.md`; for escaping rules and caveats see the `rayfin-connectors` skill.
 
-```bash
-npx fabric-app-data query <alias> --query "EVALUATE INFO.VIEW.TABLES()"
+```powershell
+npx rayfin connector invoke <name> executeQuery --input '{"query":"EVALUATE INFO.VIEW.TABLES()"}'
 ```
 
 ## Troubleshooting

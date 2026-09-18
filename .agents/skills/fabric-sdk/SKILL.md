@@ -1,248 +1,198 @@
 ---
 name: fabric-sdk
 description: >
-  How to use @microsoft/fabric-app-data to connect web applications to Fabric data
-  sources at runtime. Build browser-based apps that query semantic models
-  via DAX using the FabricClient API.
+  How to query Fabric data from a running app through the Rayfin connectors
+  client. Use getRayfinClient().connectors.<name>.executeQuery to run DAX
+  against a semantic model, and toQueryResult to normalize the response.
 ---
 
-# Fabric SDK Usage
+# Fabric Data Access at Runtime
 
 ## Overview
 
-`@microsoft/fabric-app-data` lets web applications query Fabric semantic models at
-runtime. The SDK provides a `FabricClient` that handles querying, result
-parsing, caching, and error handling. Transport and authentication are
-delegated to an `IFabricApiProxy` implementation, keeping the SDK
-environment-agnostic (browser, Node.js, Fabric extensions).
+The app reaches Fabric through the Rayfin connectors client. Each connector
+is declared in `rayfin.yml` and surfaced as
+`getRayfinClient().connectors.<name>`, with operations typed by the connector
+marker package.
+
+The connector's `workspaceId` and `itemId` are injected server-side from
+`rayfin.yml`. The app sends only the query, so no ids reach the bundle and
+there is no generated config to keep in sync.
 
 ## Quick Start
 
-```typescript
-import { FabricClient } from "@microsoft/fabric-app-data";
+Prefer the hook. It caches, normalizes, and never throws — every failure
+arrives as `data.status === "error"`:
 
-const client = new FabricClient({
-  proxy,                               // provided by host environment
-  semanticModels: {
-    sales: { workspaceId: "...", itemId: "..." },
-  },
+```typescript
+import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
+
+const { data, isLoading, error, refetch } = useSemanticModelQuery({
+  connection: "sales",
+  query: 'EVALUATE SUMMARIZECOLUMNS(Product[Category], "Total", [Sales Amount])',
 });
 
-const result = await client.semanticModel("sales").query(
-  "EVALUATE SUMMARIZECOLUMNS(Product[Category], \"Total\", [Sales Amount])"
-);
-
-if (result.status === "success") {
-  // result.table.columns — [{name, dataType}]
-  // result.table.rows    — unknown[][]
-} else {
-  // result.error.category — "api" | "query" | "overflow" | "network" | "unknown"
-  // result.error.message
+if (data?.status === "success") {
+  // data.table.columns — [{ name, dataType }]
+  // data.table.rows    — unknown[][] (frozen; copy before sorting)
+} else if (data?.status === "error") {
+  // Both a connector throw and a failure Power BI returned land here.
+  // data.error.category — connector union: "api" | "query" | "network" | "overflow" | "unknown"
+  // data.error.message
 }
+```
+
+`error` mirrors `data.error.message` as a convenience for code that just wants
+a string. It is never the only signal, so branching on `status` is enough.
+
+Drop to the client only when you need something the hook does not expose:
+
+```typescript
+import { toQueryResult } from "@microsoft/rayfin-connector-fabric-semanticmodel";
+import { getRayfinClient } from "@/lib/rayfin-client";
+
+const response = await getRayfinClient().connectors.sales.executeQuery({
+  query: "EVALUATE ...",
+});
+const result = toQueryResult(response);
 ```
 
 ## Key Concepts
 
-### FabricClient Configuration
+### Declaring connectors
 
-The `FabricClient` is constructed with a config object. The `proxy` and
-connection details are typically provided by the host environment — your
-code just needs to pass them through:
-
-```typescript
-new FabricClient({
-  proxy,                               // Provided by host environment
-  semanticModels: {                    // Named connections
-    alias: { workspaceId, itemId },
-  },
-  cache: {                             // Optional
-    enabled: true,                     // Default: true
-    maxEntries: 64,                    // Default: 64 (LRU eviction)
-  },
-});
-```
-
-- `workspaceId` can be a GUID or `"me"` for My Workspace items.
-
-### Managing Connections
-
-The `FabricClient` accepts connection config as a plain object. How you
-manage those IDs (environment variables, config files, codegen) is up to
-your project. The only requirement is that `workspaceId` and `itemId`
-are provided for each named connection.
-
-```typescript
-const client = new FabricClient({
-  proxy,
-  semanticModels: {
-    sales: { workspaceId: "00c98f7c-...", itemId: "03f2dc11-..." },
-  },
-});
-```
+Connectors come from `rayfin/rayfin.yml`, managed by `rayfin connector add`. See
+`AGENTS.md` to register one, and the `rayfin-connectors` skill that `add`
+installs for the YAML schema. `AppConnectorsSchema` in
+`src/lib/connectors.ts` types the names; it accepts any string by default, so
+adding a connector needs no code change.
 
 ### Querying
 
-There is **one method** for DAX queries:
+One operation for DAX:
 
 ```typescript
-const result = await client.semanticModel("alias").query(dax);
+await getRayfinClient().connectors[name].executeQuery({ query });
+```
 
-// To skip the cache:
-const fresh = await client.semanticModel("alias").query(dax, { bypassCache: true });
+Each query must contain exactly one `EVALUATE` statement.
+
+### Bounding rows
+
+There is no default row cap, so bound the DAX with an aggregation or `TOPN(...)`.
+
+The connector's `executeQuery` will also accept an optional
+`resultSetRowCountLimit` alongside `query`. Prefer that over `TOPN(...)` when you
+want a guard rather than a deliberately ranked subset: exceeding it fails the
+query with an `overflow` error, so a truncated result announces itself, where
+`TOPN` returns a complete-looking partial answer.
+
+`useSemanticModelQuery` does not forward the field, so from app code shape the
+DAX itself. The CLI's `invoke` accepts it.
+
+### The connector throws, the hook does not
+
+This is the one behavior that trips people up.
+
+`executeQuery` **throws** on transport, auth, and server failures. A query
+that reaches Power BI and fails there does not throw; it resolves with the
+error nested in the response body.
+
+`useSemanticModelQuery` folds both into a single result, so hook callers only
+branch on `status`. If you call the client directly, you must handle both:
+
+```typescript
+try {
+  const result = toQueryResult(await connector.executeQuery({ query }));
+  if (result.status === "error") { /* Power BI rejected the query */ }
+} catch (err) {
+  /* never reached Power BI */
+}
 ```
 
 ### Result Handling
 
-**Always check `result.status`** — queries never throw.
-
-Each query must contain exactly one `EVALUATE` statement. On success, the
-result contains a single `table` with:
-- `columns`: `Array<{ name: string, dataType: string }>` — column metadata
-- `rows`: `unknown[][]` — row-major array, values match column order by index
+`toQueryResult` returns a discriminated union on `status`. On success the
+`table` has:
+- `columns`: `Array<{ name: string, dataType: string }>`
+- `rows`: `unknown[][]`, row-major, values aligned with `columns` by index
 
 ```typescript
-const result = await model.query("EVALUATE ...");
-
-if (result.status === "success") {
-  // result.table.columns = [{ name: "Product[Name]", dataType: "String" },
-  //                          { name: "[Sales]", dataType: "Int64" }]
-  // result.table.rows    = [["Widget", 42], ["Gadget", 17]]
-  // result.table.rows[0][0] → "Widget" (matches columns[0])
-  // result.table.rows[0][1] → 42       (matches columns[1])
-} else {
-  console.error(result.error.message);
-  // result.error.category: "query" (bad DAX), "overflow" (value too large),
-  //                        "api" (HTTP error), "network" (connectivity), "unknown"
-}
+// result.table.columns = [{ name: "Product[Name]", dataType: "unknown" },
+//                          { name: "[Sales]", dataType: "unknown" }]
+// result.table.rows    = [["Widget", 42], ["Gadget", 17]]
 ```
+
+**Do not branch on `dataType`.** It is `"unknown"` whenever the payload carries
+no column metadata, which is the common in-app case: column names are then
+inferred from the first row. Supply display types yourself through
+`columnMetadata` and `toDataTable`.
+
+Because names are inferred from the first row in that fallback, a query whose
+first row omits a column (or returns no rows) yields no columns for it. Shape
+the DAX so every column is present in the first row.
 
 ### Caching
 
-Results are cached in memory by default (LRU, 64 entries).
+The connectors client does not cache. Caching is an app-level concern and
+lives in `src/lib/query-cache.ts`, above the query hooks, so one store serves
+every source kind. Use `useSemanticModelQuery` and you get it for free.
 
-```typescript
-const r1 = await model.query("EVALUATE T");  // r1.fromCache === false
-const r2 = await model.query("EVALUATE T");  // r2.fromCache === true
-
-// Check cache age
-if (r2.fromCache && r2.cachedAt) {
-  const ageMs = Date.now() - r2.cachedAt.getTime();
-}
-
-// Force fresh result
-const fresh = await model.query("EVALUATE T", { bypassCache: true });
-
-// Clear cache
-client.clearCache();                          // all sub-clients
-model.clearCache();                           // this model only
-```
-
-**What gets cached:**
-- ✅ Success results
-- ✅ Query errors (bad DAX — won't fix itself)
-- ❌ API errors (401, 500 — transient)
-- ❌ Network errors (transient)
+Successful results and DAX (`query`) errors are cached. `api`, `network`,
+`overflow`, and `unknown` errors are not, since retrying may succeed.
 
 ### Error Categories
 
-| Category | Meaning | Cached? | Example |
-|----------|---------|---------|---------|
-| `query` | Invalid DAX syntax | Yes | `"Syntax error at position 18"` |
-| `overflow` | Integer/decimal exceeds safe range | Yes | Value > MAX_SAFE_INTEGER |
-| `api` | HTTP error from Fabric | No | 401 Unauthorized, 500 Server Error |
-| `network` | Connection failure | No | DNS resolution, timeout |
-| `unknown` | Unexpected error | No | Parse failure |
+| Category | Meaning | Example |
+|----------|---------|---------|
+| `query` | Invalid DAX | `"Syntax error at position 18"` |
+| `overflow` | Row or byte cap exceeded, data truncated | `"More than 1000000 rows in a query result"` |
+| `api` | Transport, auth, or dataset-level failure | 401 Unauthorized |
+| `network` | Direct execution failed before reaching the service | Connection reset |
+| `unknown` | Could not categorize | Parse failure |
 
-### Data Types and DateTime Semantics
-
-The SDK converts all DAX data types to standard JS values:
-
-| DAX type | JS value type | Example |
-|----------|--------------|---------|
-| Integer (Int64) | `number` | `42` |
-| Double (Float64) | `number` | `3.14` |
-| Currency/Decimal | `number` | `100.50` |
-| Boolean | `boolean` | `true` |
-| String | `string` | `"hello"` |
-| DateTime/Date | `string` (ISO) | `"2024-01-15T10:30:00.000"` |
-| BLANK | `null` | `null` |
-
-**DateTime values** are returned as ISO 8601 strings **without a timezone
-suffix** (no `Z`, no `±HH:MM`). This matches the semantics of Analysis
-Services semantic models, where datetimes are timezone-unaware.
-
-```typescript
-// DateTime column values look like:
-"2024-01-15T10:30:00.000"   // no timezone — interpret as-is
-"2023-06-01T00:00:00.000"
-```
-
-This format is directly usable as a `temporal` type in charting libraries
-and ensures consistent display across all browser timezones. The JSON and
-Arrow protocols both return the same format.
-
-**Integer overflow**: If an integer value exceeds `±Number.MAX_SAFE_INTEGER`
-(±9,007,199,254,740,991), the query returns an error with
-`category: "overflow"` rather than silently losing precision.
+`overflow` means the result is **truncated but present**. Treat it as a
+failure rather than rendering partial data as if it were complete.
 
 ## Common Patterns
 
-### Multiple Models
+### Multiple models
 
 ```typescript
-const client = new FabricClient({
-  proxy,
-  semanticModels: {
-    sales: { workspaceId: "ws-1", itemId: "item-1" },
-    inventory: { workspaceId: "ws-2", itemId: "item-2" },
-  },
-});
-
-const salesResult = await client.semanticModel("sales").query("EVALUATE ...");
-const invResult = await client.semanticModel("inventory").query("EVALUATE ...");
+const sales = useSemanticModelQuery({ connection: "sales", query: salesDax });
+const inventory = useSemanticModelQuery({ connection: "inventory", query: invDax });
 ```
 
-### My Workspace Items
+### Forcing fresh data
 
 ```typescript
-semanticModels: {
-  myModel: { workspaceId: "me", itemId: "..." },
-}
+const { data, refetch } = useSemanticModelQuery({ connection: "sales", query });
+await refetch();                       // skips the cache
 ```
 
-### Disabling Cache
-
-```typescript
-new FabricClient({
-  proxy,
-  cache: { enabled: false },
-  semanticModels: { ... },
-});
-```
+`clearQueryCache()` empties the store but does not re-render anything already
+mounted — it changes what the next query reads. Use `refetch()` to re-read now.
 
 ## Anti-Patterns
 
-- **Don't catch errors from `query()`** — it never throws. Check `result.status`.
-- **Don't hardcode endpoint URLs** — the proxy handles transport.
-- **Don't construct `SemanticModelClient` directly** — use `client.semanticModel(alias)`.
-- **Don't import from internal paths** — only import from `"@microsoft/fabric-app-data"`.
+- **Don't branch on `dataType`** — it is `"unknown"` whenever column metadata was absent and names had to be inferred from the first row.
+- **Don't treat a resolved promise as success** — check `status`.
+- **Don't send `workspaceId` or `itemId`** — they come from `rayfin.yml` server-side.
+- **Don't build your own cache** — use `useSemanticModelQuery`.
+- **Don't return unbounded results** — there is no default row cap, and the cache retains up to 256 results for the session. Bound the DAX with an aggregation or `TOPN(...)`.
+- **Don't mutate a result** — tables are frozen. Copy before sorting.
 
 ## Type Reference
 
-All types are exported from the `"@microsoft/fabric-app-data"` package entry point.
-
-Key types to import when needed:
 ```typescript
 import type {
-  FabricClientConfig,
-  FabricItemRef,
-  QueryResult,
-  CachedQueryResult,
-  QueryCacheOptions,
+  ExecuteQueryInput,
+  FabricSemanticModelTabularResponse,
+  SemanticModelQueryResult,
   QueryTable,
   QueryColumn,
   QueryError,
-} from "@microsoft/fabric-app-data";
+} from "@microsoft/rayfin-connector-fabric-semanticmodel";
 ```
 
 For full type definitions, see `references/types.md` in this skill.

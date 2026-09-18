@@ -38,7 +38,7 @@ description: >
 ## Must / Prefer / Avoid
 
 ### Must
-- Always test generated DAX via `npx fabric-app-data query <alias> --query '<DAX>'` before using in app code
+- Always test generated DAX via `rayfin connector invoke <name> executeQuery` before using in app code
 - Use fully-qualified `'Table'[Column]` for column references
 - Use simple `[Measure]` for measure references
 - Use DEFINE for VAR and local MEASURE declarations (single DEFINE block, no commas)
@@ -121,24 +121,22 @@ Consult [dax-time-intelligence.md](./references/dax-time-intelligence.md) whenev
 ## Testing & Iteration
 
 1. Generate the DAX query expression
-2. Execute via `npx fabric-app-data query <alias> --query '<DAX>'`
+2. Execute via `rayfin connector invoke <name> executeQuery --input '{"query":"<DAX>"}'`
 3. Inspect results: check column names, data types, row counts, and actual data values
 4. If error: consult [dax-core-reference.md](./references/dax-core-reference.md), fix, and re-test
 5. Iterate until the query returns expected results
 
 ## Query Execution
 
-Use `npx fabric-app-data query <alias> --query '<DAX>'` to run queries. This uses the same SDK pipeline as the running app, so results are identical to what the app produces at runtime. To re-test an existing `.dax` file without copying the query text, use `--file`: `npx fabric-app-data query <alias> --file src/queries/revenue.dax`. For full CLI options (profiles, result limits), see the `fabric-cli` skill.
+Use `rayfin connector invoke <name> executeQuery --input '{"query":"<DAX>"}'` to run queries. This queries the same semantic model the app queries, so the column names and row shape are what the app will receive; `dataType` is the exception, as `AGENTS.md` explains. Note that `--file` expects a JSON payload (`{ "query": "..." }`), not a raw `.dax` file. For prerequisites see `AGENTS.md`; for escaping rules and caveats see the `rayfin-connectors` skill.
 
-**Result trimming:** The CLI returns at most 1000 rows by default. When the result is trimmed, the output includes a `_cliWarning` field (e.g., `"Result trimmed to first 1000 of 5000 rows"`). This is a CLI-only limitation — the full dataset is available in the running app. If you need to see more data, refine your DAX with filters or aggregations.
+**No row cap:** unlike the previous CLI, there is no `--limit` and no automatic trimming, so a broad query returns every row and can flood the context window. Bound the result in the DAX itself with `TOPN(...)` or an aggregation.
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| CLI `query` fails with "not signed in" | Run `az login` to sign in to Azure CLI |
-| CLI `query` fails with "Azure CLI is not installed" | Install from https://aka.ms/install-azure-cli |
-| CLI `query` fails with "alias not found" | Run `npx fabric-app-data list` to check available aliases, then `npx fabric-app-data add` to register |
+| CLI `invoke` fails with "connector not found" | Run `rayfin connector list` to check declared connectors, then `rayfin connector add` to register |
 | DAX syntax errors | Consult [dax-core-reference.md](./references/dax-core-reference.md) — check reserved keywords, quoting rules, EVALUATE/scalar mistakes |
 | Unexpected query results | Check filter context, relationship direction, BLANK handling in [dax-core-reference.md](./references/dax-core-reference.md#blank-semantics) |
 | Time intelligence returns wrong values | Check date table prerequisites and critical rules in [dax-time-intelligence.md](./references/dax-time-intelligence.md) |
