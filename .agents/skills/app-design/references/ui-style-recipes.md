@@ -67,10 +67,6 @@ When nesting rounded containers, step down the radius scale so inner corners don
 - Inner: `rounded-lg`
 - Deeply nested: `rounded-md`
 
-### Spacing rhythm
-
-Use the 4px baseline grid (`spacing-100`, `spacing-200`, `spacing-300`, `spacing-400`, etc.). Within a component, be consistent — don't mix spacing scales arbitrarily.
-
 ### Horizontal bar alignment
 
 Toolbars, filter bars, and header rows with mixed-height elements (icons, stacked label+control pairs, standalone text) should share a consistent alignment edge — typically vertical center or bottom baseline — so the row reads as a unified strip rather than items floating at different levels.
@@ -162,7 +158,7 @@ These are often left unstyled — don't. They should match the aesthetic directi
 - **Surface**: `bg-popover text-popover-foreground`
 - **Shadow**: `shadow-8`
 - **Item focus**: `focus:bg-accent focus:text-accent-foreground`
-- **Item spacing**: keep compact — `py-200-nudge px-200` range
+- **Item spacing**: typically `py-1.5 px-2`
 - **Item typography**: `text-300`
 - **Max height**: respect Radix's available-height variable for viewport-aware sizing
 

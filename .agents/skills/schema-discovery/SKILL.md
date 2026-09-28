@@ -116,8 +116,8 @@ For the full query catalog and output column details, see [discovery-queries.md]
 
 Use `npx fabric-app-data query <alias> --query '<DAX>'` to execute INFO queries against a semantic model. For full CLI options (profiles, file input, result limits), see the `fabric-cli` skill.
 
-```bash
-npx fabric-app-data query <alias> --query "EVALUATE INFO.VIEW.TABLES()"
+```powershell
+npx fabric-app-data query "<alias>" --query "EVALUATE INFO.VIEW.TABLES()"
 ```
 
 ## Troubleshooting

@@ -20,14 +20,16 @@ Then match your execution to your direction — a maximalist direction needs lay
 
 Pick fonts that set the app's character — this is one of the strongest signals of intentional design. At minimum choose a characterful `--font-heading` paired with a complementary `--font-base`, ideally from the same foundry or design family. Update `--font-monospace` and `--font-numeric` if necessary. Avoid generic defaults like Arial, Inter, or Roboto.
 
-Load fonts via Google Fonts (or another CDN) as `<link>` tags in `index.html`, then update the font family tokens in the `@theme` block of `global.css`.
+Load fonts via Google Fonts (or another CDN) as `<link>` tags in `index.html`, include `crossorigin="anonymous"` on each font stylesheet link, then update the font family tokens in the `@theme` block of `global.css`.
+
+Style the primary page heading with `font-page-title` and its subtitle with `font-page-subtitle`.
 
 ### Theming Workflow
 
 Start by customizing `src/global.css` — this is the single source of truth for the app's active visual identity. Every component uses these tokens, so setting them first means the entire UI shifts together.
 
-1. **Colors**: Update the semantic color tokens (`--color-primary`, `--color-background`, `--color-card`, `--color-border`, etc.) in both the `@theme` block and the `.dark` override to match the aesthetic direction. The defaults are neutral blue/grey — make them yours.
-2. **Data palette**: Define the ten data color tokens (`--color-data-1`–`--color-data-10`) as the active palette, with `.dark` overrides, per the [data color rules](../visuals/references/formatting.md#categorical-color-palette). Then populate `src/data-palette-presets.json` with three alternative palettes — never a copy of the active one — each with a kebab-case `id`, a concise `name`, and `colors.light` / `colors.dark` arrays of exactly ten six-digit hex colors in token order.
+1. **Colors**: Customize the semantic color tokens (`--color-primary`, `--color-background`, `--color-card`, `--color-border`, etc.) in their existing blocks and corresponding `.dark` overrides. The defaults are neutral blue/grey — make them yours.
+2. **Data palette**: Follow the [data color rules](../visuals/references/formatting.md#categorical-color-palette), including `.dark` overrides. Populate `src/data-palette-presets.json` with three alternatives distinct from the active palette, each with a kebab-case `id`, a concise `name`, and `colors.light` / `colors.dark` arrays of exactly ten six-digit hex colors in token order.
 3. **Radius**: Adjust `--radius` (the base radius) and the radius scale to match the tone — sharp/geometric (lower values), soft/rounded (higher values), or pill-shaped (`--radius-full`).
 4. **Fonts**: Update the font family tokens as described in the Typography section above.
 5. **Then build components.** Focus component-level styling on layout, spacing, and element-specific details — not re-specifying colors and radii that the tokens already handle.
@@ -74,7 +76,11 @@ The header/toolbar is part of the design language — not every app needs a trad
 - Start mobile-first and scale up columns with responsive breakpoints.
 - Support mixed-size cards via span utilities.
 
-Avoid uniform grids where every card is the same size — they look like a spreadsheet. Vary card spans to create visual hierarchy: a wide chart spanning two columns next to a tall narrow KPI panel, or a full-width table below a row of smaller cards. Let the data importance guide which elements get more space.
+Avoid uniform grids where every card is the same size — they look like a spreadsheet. Use mixed card spans to create useful visual hierarchy, with widths guided by the analytical task, data importance, data density, and label needs. Equal-size cards are appropriate when they support comparison.
+
+Review the complete row composition at each responsive breakpoint, including partial rows before full-width tables. When substantial space is unused, consider whether a neighboring chart would benefit from additional width within the dashboard wrapper. Dense line and area time series often benefit from more horizontal space to separate observations and time labels; for example, a dense intraday line chart could span the remaining columns beside a compact ranking chart.
+
+Do not widen charts merely to fill space: preserve useful proportions for donuts, maps, and other aspect-sensitive visuals, and retain intentional whitespace where it serves the design. Judge the resulting layout by the readability of its marks and labels, not just how much space it occupies.
 
 ### Loading, Empty & Error States
 
@@ -107,12 +113,14 @@ All styling must use the design tokens defined in `src/global.css` via Tailwind 
 Examples:
 - `bg-primary text-primary-foreground` — not `bg-blue-600 text-white`
 - `text-300` — not `text-sm` or `text-[14px]`
-- `p-400 gap-300` — not `p-4` or `gap-3`
+- `p-4 gap-3` — not `p-[16px] gap-[12px]`
 - `font-semibold` — not `font-[600]`
 - `rounded-xl` — not `rounded-[8px]`
 - `icon-size-200` — not `w-4 h-4`
 
 **`cn()` and tailwind-merge conflicts:** `tailwind-merge` treats `text-*` utilities as one conflict group. In `cn()`, combining text size and text color with ambiguous `text-*` classes can drop one class. Prefer explicit length syntax for font size (e.g., `text-[length:var(--text-300)]`) when combining with text color classes inside `cn()`. If classes are static and not merged, `text-300 text-foreground` is acceptable.
+
+**Spacing:** Numeric spacing utilities multiply `--spacing` (4px by default). Use `gap-grid` on dashboard card layouts. Numeric width, height, and positioning utilities also scale; use dedicated tokens such as `icon-size-200` for dimensions that must stay fixed.
 
 **Form element font inheritance:** Native form controls may not inherit the page font family by default. Ensure base styles in `global.css` set `font-family: inherit` for `select`, `input`, `textarea`, and `button`.
 

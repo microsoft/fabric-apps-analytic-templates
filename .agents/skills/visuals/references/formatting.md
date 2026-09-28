@@ -125,7 +125,7 @@ The visual components read their styling from CSS custom properties on the page.
 | Colors | `--color-foreground`, `--color-background`, `--color-brand-*`, `--color-data-1` through `--color-data-10`, etc. |
 | Font family | `--font-base`, `--font-monospace` |
 | Font sizes | `--text-200` through `--text-600` |
-| Spacing | `--spacing-200`, `--spacing-300`, etc. |
+| UI spacing | `--spacing-xs`, `--spacing-s`, `--spacing-m`, etc. |
 | Border radius | `--radius-sm`, `--radius-md`, etc. |
 
 ### Named Styles

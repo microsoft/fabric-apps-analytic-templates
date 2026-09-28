@@ -161,12 +161,12 @@ npx fabric-app-data generate -p production
 
 Execute a DAX query against a semantic model using the same SDK pipeline as the running app. Aliases: `execute`, `exec`.
 
-```sh
-npx fabric-app-data query <alias> --query '<DAX>'
-npx fabric-app-data query <alias> --file src/queries/revenue.dax
-npx fabric-app-data query semanticModel <alias> --query '<DAX>'  # explicit source type
-npx fabric-app-data query <alias> --query '<DAX>' --limit 50     # return at most 50 rows
-npx fabric-app-data query <alias> --query '<DAX>' --profile staging
+```powershell
+npx fabric-app-data query "<alias>" --query '<DAX>'
+npx fabric-app-data query "<alias>" --file src/queries/revenue.dax
+npx fabric-app-data query semanticModel "<alias>" --query '<DAX>'  # explicit source type
+npx fabric-app-data query "<alias>" --query '<DAX>' --limit 50     # return at most 50 rows
+npx fabric-app-data query "<alias>" --query '<DAX>' --profile staging
 ```
 
 Options:

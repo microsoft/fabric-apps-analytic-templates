@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 //-----------------------------------------------------------------------
 // <copyright company="Microsoft Corporation">
 //        Copyright (c) Microsoft Corporation.  All rights reserved.
@@ -7,61 +5,144 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-
 // Composes the Fabric portal embed URL from .env.local (or .env.fabric*) and
-// launches `playwright-cli -s=fabric open --persistent` with the LNA-disable
-// Chromium flags. See .github/skills/playwright-cli/references/fabric-embed.md
+// launches `playwright-cli -s=fabric open --profile=<dir>` with the LNA-disable
+// Chromium flags. See .agents/skills/app-validation/references/fabric-embed.md
 // for the full background.
 import { spawn } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { resolve, join } from 'node:path';
 
-function parseEnvFile(file) {
+export function parseEnvFile(file) {
     return Object.fromEntries(
         readFileSync(file, 'utf8')
             .split('\n')
-            .filter((l) => l && !l.startsWith('#') && l.includes('='))
-            .map((l) => {
-                const i = l.indexOf('=');
-                return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, '')];
+            .filter((line) => line && !line.startsWith('#') && line.includes('='))
+            .map((line) => {
+                const index = line.indexOf('=');
+                return [
+                    line.slice(0, index).trim(),
+                    line.slice(index + 1).trim().replace(/^["']|["']$/g, ''),
+                ];
             }),
     );
 }
 
-// Load .env.local first (developer overrides), then layer .env.fabric (written
-// by `npx rayfin up`) to fill in anything missing.
-const cwd = process.cwd();
-const candidates = ['.env.local', '.env.fabric'].map((f) => resolve(cwd, f));
-const found = candidates.filter((f) => existsSync(f));
-if (found.length === 0) {
-    console.error('Missing .env.local and .env.fabric — run `npx rayfin up` first.');
-    process.exit(1);
+export function readFabricEnvironment(cwd) {
+    const candidates = ['.env.local', '.env.fabric'].map((file) => resolve(cwd, file));
+    const found = candidates.filter((file) => existsSync(file));
+    if (found.length === 0) {
+        throw new Error('Missing .env.local and .env.fabric — run `npx rayfin up` first.');
+    }
+    return found.reduce((acc, file) => ({ ...parseEnvFile(file), ...acc }), {});
 }
 
-const env = found.reduce((acc, file) => ({ ...parseEnvFile(file), ...acc }), {});
+export function buildEmbedUrl(env, processEnv = process.env) {
+    const portal = (env.VITE_FABRIC_PORTAL_URL || '').replace(/\/$/, '');
+    const workspace = env.VITE_FABRIC_WORKSPACE_ID;
+    const item = env.VITE_FABRIC_ITEM_ID;
+    const dev = processEnv.DEV_URL || 'http://localhost:5173';
 
-const portal = (env.VITE_FABRIC_PORTAL_URL || '').replace(/\/$/, '');
-const ws = env.VITE_FABRIC_WORKSPACE_ID;
-const item = env.VITE_FABRIC_ITEM_ID;
-const dev = process.env.DEV_URL || 'http://localhost:5173';
+    if (!portal || !workspace || !item) {
+        throw new Error(
+            'Need VITE_FABRIC_PORTAL_URL, VITE_FABRIC_WORKSPACE_ID, ' +
+            'VITE_FABRIC_ITEM_ID in .env.local or .env.fabric.',
+        );
+    }
+    return `${portal}/groups/${workspace}/appbackends/${item}` +
+        `?experience=power-bi&devUri=${encodeURIComponent(dev)}`;
+}
 
-if (!portal || !ws || !item) {
-    console.error(
-        'Need VITE_FABRIC_PORTAL_URL, VITE_FABRIC_WORKSPACE_ID, VITE_FABRIC_ITEM_ID in .env.local or .env.fabric.',
+export function launchPlaywright(url, {
+    profileDirectory,
+    platform = process.platform,
+    processEnv = process.env,
+    spawnProcess = spawn,
+} = {}) {
+    if (!profileDirectory) {
+        throw new Error('Cannot launch playwright-cli without a browser profile directory.');
+    }
+    const playwrightArgs = [
+        '-s=fabric',
+        'open',
+        `--profile=${profileDirectory}`,
+        '--config=.playwright-config.json',
+        url,
+    ];
+    if (platform !== 'win32') {
+        return spawnProcess('playwright-cli', playwrightArgs, {
+            stdio: 'inherit',
+            shell: false,
+        });
+    }
+
+    const commandShell = processEnv.ComSpec || processEnv.COMSPEC || 'cmd.exe';
+    const urlVariable = 'LYRA_FABRIC_EMBED_URL';
+    const profileVariable = 'LYRA_FABRIC_BROWSER_PROFILE';
+    return spawnProcess(
+        commandShell,
+        [
+            '/d',
+            '/s',
+            '/c',
+            `playwright-cli.cmd -s=fabric open --profile="%${profileVariable}%" ` +
+            `--config=.playwright-config.json "%${urlVariable}%"`,
+        ],
+        {
+            stdio: 'inherit',
+            shell: false,
+            windowsVerbatimArguments: true,
+            env: {
+                ...processEnv,
+                [urlVariable]: url,
+                [profileVariable]: profileDirectory,
+            },
+        },
     );
-    process.exit(1);
 }
 
-const url = `${portal}/groups/${ws}/appbackends/${item}?experience=power-bi&devUri=${encodeURIComponent(dev)}`;
+export function main({
+    cwd = process.cwd(),
+    processEnv = process.env,
+    platform = process.platform,
+    spawnProcess = spawn,
+} = {}) {
+    let url;
+    try {
+        url = buildEmbedUrl(readFabricEnvironment(cwd), processEnv);
+    } catch (error) {
+        console.error(error instanceof Error ? error.message : String(error));
+        return 1;
+    }
 
-console.log(`Opening Fabric portal embed → ${url}`);
-console.log('First run: sign in to Microsoft when prompted; cookies persist for the next run.');
+    const profileDirectory = processEnv.FABRIC_BROWSER_PROFILE ||
+        join(homedir(), '.rayfin', 'browser-profiles', 'fabric');
+    mkdirSync(profileDirectory, { recursive: true });
 
-// shell:true is required on Windows so Node can resolve the playwright-cli .cmd shim
-// through cmd.exe's PATHEXT lookup.  However cmd.exe treats & as a command separator,
-// so any URL arg that contains & (e.g. ?experience=power-bi&devUri=…) must be wrapped
-// in double-quotes to be passed as a single token.  Both cmd.exe and sh honour this.
-const quoteForShell = (arg) => `"${arg}"`;
-const args = ['-s=fabric', 'open', '--persistent', '--config=.playwright-config.json', quoteForShell(url)];
-const child = spawn('playwright-cli', args, { stdio: 'inherit', shell: true });
-child.on('exit', (code) => process.exit(code ?? 0));
+    console.log(`Opening Fabric portal embed → ${url}`);
+    console.log(`Browser profile: ${profileDirectory}`);
+    console.log(
+        'First run only: the embed signs in across several Microsoft origins, so you may be prompted more than once.',
+    );
+    console.log('This profile is shared by every project, so later runs sign in silently.');
+
+    const child = launchPlaywright(url, {
+        profileDirectory,
+        platform,
+        processEnv,
+        spawnProcess,
+    });
+    child.on('error', (error) => {
+        console.error(`Could not launch playwright-cli: ${error.message}`);
+        process.exitCode = 1;
+    });
+    child.on('exit', (code) => {
+        process.exitCode = code ?? 0;
+    });
+    return 0;
+}
+
+if (import.meta.main) {
+    process.exitCode = main();
+}

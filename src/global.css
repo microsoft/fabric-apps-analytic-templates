@@ -4,15 +4,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Bridged tokens — kept in `@theme static` so the CSS vars are always
-   emitted, not tree-shaken when no Tailwind utility consumes them.
-   Required because <VegaVisual> and <DataGrid> read these at runtime via
-   `useCssTheme()` and project them into a JS theme object (Vega's SVG output
-   cannot resolve `var()` references). */
+/* These tokens are consumed directly as CSS variables, so emit them
+   even when no Tailwind utility references them. */
 @theme static {
   --color-brand:            #0f6cbd;  /* bar/area fills, button-like brand surfaces */
   --color-brand-foreground: #0f6cbd;  /* line/point marks, branded text & emphasis */
   --color-hover:            #f5f5f5;  /* row/cell hover surface in DataGrid + visuals */
+  --font-page-title: var(--font-heading);
+  --font-page-subtitle: var(--font-base);
+  --font-visual-title: var(--font-heading);
+  --font-visual-subtitle: var(--font-base);
+  --font-data-label: var(--font-base);
 }
 
 @theme {
@@ -72,20 +74,9 @@
   --radius-full: 9999px;
   --radius: 6px;
 
-  /* Spacing — 4px grid; use only these tokens, no interpolation. *-nudge = base − 2px.
-     Usage: p-*, m-*, gap-* (e.g. p-400 gap-300) */
-  --spacing-none: 0;
-  --spacing-100-nudge: 2px;
-  --spacing-100: 4px;
-  --spacing-200-nudge: 6px;
-  --spacing-200: 8px;
-  --spacing-300-nudge: 10px;
-  --spacing-300: 12px;
-  --spacing-400: 16px;
-  --spacing-500: 20px;
-  --spacing-600: 24px;
-  --spacing-700: 28px;
-  --spacing-800: 32px;
+  /* Spacing base unit
+     Usage: p-*, m-*, gap-* (e.g. p-4 gap-3) */
+  --spacing: 4px;
 
   /* Font Sizes — 100-based scale 
      Usage: text-* (e.g. text-300, text-hero-900) */
@@ -140,6 +131,10 @@
   --icon-size-500: 28px;
   --icon-size-600: 32px;
   --icon-size-700: 48px;
+}
+
+@utility gap-grid {
+  gap: var(--grid-gap, calc(var(--spacing) * 4));
 }
 
 @utility icon-size-* {
