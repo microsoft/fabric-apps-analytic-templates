@@ -20,7 +20,7 @@ const projectRoot = process.env.PROJECT_ROOT || import.meta.dirname
 // on every response and short-circuits the corresponding preflight OPTIONS request.
 // This is required for fetch/XHR subresources from the embedded app — top-level
 // iframe navigations additionally require launching Chromium with the
-// `--disable-features=...LocalNetworkAccessChecks` flag (see .playwright-config.json).
+// `--disable-features=...LocalNetworkAccessChecks` flag.
 const localNetworkAccessPlugin: PluginOption = {
   name: 'local-network-access-headers',
   configureServer(server) {

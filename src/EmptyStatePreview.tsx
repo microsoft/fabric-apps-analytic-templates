@@ -89,10 +89,10 @@ export function EmptyStatePreview() {
                                     onClick={() => setActive(i)}
                                     aria-label={`Show ${tab.label} preview`}
                                     aria-pressed={active === i}
-                                    className="relative h-5 w-[72px] overflow-hidden rounded-[10px] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="relative h-5 w-[72px] overflow-hidden rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                     <span
-                                        className={`absolute inset-0 rounded-[10px] transition-colors duration-300 ${
+                                        className={`absolute inset-0 rounded-2xl transition-colors duration-300 ${
                                             active === i ? "" : "bg-foreground/[0.08]"
                                         }`}
                                         style={
@@ -108,7 +108,7 @@ export function EmptyStatePreview() {
                                         <motion.span
                                             key={`progress-${tab.id}-${active}`}
                                             aria-hidden
-                                            className="absolute bottom-0 left-0 h-full origin-left rounded-[10px] bg-foreground/25"
+                                            className="absolute bottom-0 left-0 h-full origin-left rounded-2xl bg-foreground/25"
                                             initial={{ scaleX: 0 }}
                                             animate={{ scaleX: 1 }}
                                             transition={{ duration: 3.8, ease: "linear" }}
@@ -640,9 +640,9 @@ function FormGhost({ delay = 0 }: { delay?: number }) {
                 transition={{ duration: 0.4, ease: "easeOut", delay: delay + 0.4 }}
                 className="flex items-center justify-end gap-3"
             >
-                <div className="h-5 w-[72px] rounded-[10px] bg-foreground/[0.12]" />
+                <div className="h-5 w-[72px] rounded-2xl bg-foreground/[0.12]" />
                 <div
-                    className="h-5 w-[72px] rounded-[10px]"
+                    className="h-5 w-[72px] rounded-2xl"
                     style={{
                         background:
                             "color-mix(in srgb, var(--color-foreground) 55%, var(--color-background))",

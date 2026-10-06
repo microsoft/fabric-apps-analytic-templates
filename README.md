@@ -11,9 +11,8 @@ View our [Microsoft Learn documentation](https://learn.microsoft.com/fabric/apps
 ## Prerequisites
 
 1. **Node.js (v22)**: Download and install from https://nodejs.org/dist/v22.22.2/node-v22.22.2-x64.msi
-1. **GitHub Copilot CLI**: Refer to https://github.com/github/copilot-cli
-1. **Playwright CLI**: Run `npm install -g @playwright/cli@latest` in Terminal
-1. **Azure CLI**: Install from https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest. After installation, run `az login` in your terminal to sign in to your Azure account.
+2. **GitHub Copilot CLI**: Refer to https://github.com/github/copilot-cli
+3. **Azure CLI**: Install from https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest. After installation, run `az login` in your terminal to sign in to your Azure account.
 
 ## Instructions for building a new web app
 

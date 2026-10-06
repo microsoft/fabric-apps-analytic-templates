@@ -123,10 +123,6 @@ The default `cornerRadiusEnd` is `4` (from `--radius-md`). Use `0` for sharp aes
 
 - **Always hide the size legend** — set `legend: null` on the `size` encoding.
 
-### Pie / Donut
-
-- Single series: hide the legend.
-
 ### Waterfall charts
 
 - Color-encode by type with a fixed domain/range: increase (green), decrease (red), subtotal (primary).

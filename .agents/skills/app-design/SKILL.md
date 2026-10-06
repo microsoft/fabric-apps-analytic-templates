@@ -22,7 +22,7 @@ Pick fonts that set the app's character — this is one of the strongest signals
 
 Load fonts via Google Fonts (or another CDN) as `<link>` tags in `index.html`, include `crossorigin="anonymous"` on each font stylesheet link, then update the font family tokens in the `@theme` block of `global.css`.
 
-Style the primary page heading with `font-page-title` and its subtitle with `font-page-subtitle`.
+Style the primary page heading with `font-page-title text-page-title` and its subtitle with `font-page-subtitle text-page-subtitle`.
 
 ### Theming Workflow
 
