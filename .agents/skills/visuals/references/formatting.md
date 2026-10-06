@@ -33,6 +33,10 @@ When choosing custom colors for data series, ensure adjacent colors remain easil
 
 ## Chart-Specific Rules
 
+### Pie / Donut
+
+- Set `legend: null` on each field-based encoding that would produce a legend (usually `color`), unless the user explicitly requests one.
+
 ### Single Value (Card)
 
 - Show the value with the label below, like a card visual with no embellishments.

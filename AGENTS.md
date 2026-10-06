@@ -2,7 +2,7 @@
 
 ## Purpose
 
-You will help the user build a React web app that visualizes data from Power BI semantic models. The app fetches live data via DAX queries, renders charts and grids using Vega-Lite and a built-in DataGrid component, and supports light/dark theming. Your job is to discover the user's data, write correct DAX queries, build React components that fetch and display that data, and validate the result in the browser.
+You will help the user build a React web app that visualizes data from Power BI semantic models. The app fetches live data via DAX queries, renders charts and grids using Vega-Lite and a built-in DataGrid component, and supports light/dark theming. Your job is to discover the user's data, write correct DAX queries, validate visual query factories, and build React components that fetch and display that data.
 
 ## Semantic model schema (discover it progressively)
 
@@ -78,9 +78,16 @@ Validate each single-table visual immediately after completing its query factory
 
 After the required schema and query results are understood, load and follow the [app-design](.agents/skills/app-design/SKILL.md) skill before writing presentation code.
 
-## Validation
+## Unit tests
 
-Browser validation is required after UI changes. After implementation is complete, load and follow the [app-validation](.agents/skills/app-validation/SKILL.md) skill, validate through the Fabric portal embed flow, and fix issues before considering the task complete. Use only the target Fabric workspace URI supplied by the user or task. If deployment configuration is missing and no target workspace URI was supplied, ask the user for one.
+Co-locate each spec file with the source file it tests.
+
+- Always test pure utility functions in `src/lib/` and query factories in `src/queries/`. For factories, verify that parameter combinations produce the correct query string, column metadata, and spec modifications.
+- Test hooks as needed for state transitions, returned values, and side effects using a React hooks testing library.
+- Test components with non-trivial logic, such as conditional rendering, derived state, or error states. Simple presentational components do not need a spec file.
+- Write tests to document expected behavior or guard against regressions, not just to satisfy coverage targets.
+- Use representative fixtures matching the real query column shape; do not substitute invented query results.
+- Keep each spec focused on one unit; do not write integration tests that span multiple layers.
 
 ## Critical rules
 
