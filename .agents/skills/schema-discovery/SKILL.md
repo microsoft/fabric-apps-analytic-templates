@@ -37,7 +37,7 @@ description: >
 - Fetching full schema upfront — discover incrementally based on need
 - Re-fetching metadata already discovered in this conversation
 - Using GetSemanticModelSchema or GenerateQuery MCP tools (these are not available)
-- Using `DiscoverArtifacts` to find a semantic model — that MCP tool is not available; use `npx fabric-app-data search` (see [fabric-cli](../fabric-cli/SKILL.md)) instead
+- Using `DiscoverArtifacts` to find a semantic model — that MCP tool is not available. Use `npx rayfin connector search "<name>" --all-workspaces --type fabric-semanticmodel --json`, or ask the user for the Fabric portal URL, then register the model with `npx rayfin connector add` (see `AGENTS.md`)
 
 ## Progressive Schema Discovery
 
@@ -114,11 +114,13 @@ For the full query catalog and output column details, see [discovery-queries.md]
 
 ## Running Discovery Queries
 
-Use `npx fabric-app-data query <alias> --query '<DAX>'` to execute INFO queries against a semantic model. For full CLI options (profiles, file input, result limits), see the `fabric-cli` skill.
+Run INFO queries through the connector exactly as `AGENTS.md` prescribes: write the JSON operation input to a payload file inside the project with a file API, for example `./inspection/schema.query.json` containing `{ "query": "EVALUATE INFO.VIEW.TABLES()" }`, then pass it with `--file`. See `AGENTS.md` for prerequisites and payload rules.
 
 ```powershell
-npx fabric-app-data query "<alias>" --query "EVALUATE INFO.VIEW.TABLES()"
+npx rayfin connector invoke --name <name> --operation executeQuery --file ./inspection/schema.query.json
 ```
+
+Do not pass the query inline with `--input '{"query":"..."}'`: PowerShell strips the nested quotes when calling `npx`, so the CLI receives invalid JSON.
 
 ## Troubleshooting
 

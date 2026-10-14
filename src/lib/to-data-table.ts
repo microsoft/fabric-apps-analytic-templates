@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------
 
 import type { ColumnDef, DataTable } from "@microsoft/fabric-visuals-core";
-import type { QueryTable } from "@microsoft/fabric-app-data";
+import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 
 /**
  * Dictionary keyed by the original column name from the DAX query result.
@@ -25,13 +25,20 @@ export interface RollupDataTableOptions {
 }
 
 /**
- * Merges a raw SDK query table with static column metadata to produce
+ * Merges a raw connector query table with static column metadata to produce
  * a `DataTable` that `VegaVisual` and `DataGrid` accept directly.
  *
- * @param queryTable - The `table` value from `CachedQueryResult` (SDK output).
+ * @param queryTable - The `table` value from a successful query result.
  * @param columnMetadata - Metadata dictionary exported from the query barrel file,
  *                         keyed by the original column name.
  * @returns A `DataTable` with enriched `ColumnDef` entries and the original rows.
+ *
+ * @remarks
+ * `rows` is passed through by reference, and every result the query layer
+ * returns is frozen (see `src/lib/query-cache.ts`), so a later cache hit cannot
+ * be corrupted by an earlier caller. Derive a new array —
+ * `[...rows].sort(...)` — rather than sorting or otherwise mutating in place,
+ * which throws in strict mode.
  *
  * @example
  * ```tsx

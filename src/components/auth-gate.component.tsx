@@ -35,7 +35,7 @@ export function AuthGate({ children }: AuthGateProps) {
     if (!isAuthenticated) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background p-4">
-                <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 text-center shadow-8">
+                <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 text-center shadow-container-8">
                     <h1 className="mb-2 text-500 font-semibold leading-500 text-card-foreground">
                         Sign in to open this app
                     </h1>

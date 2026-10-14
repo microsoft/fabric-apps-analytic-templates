@@ -79,7 +79,7 @@ ORDER BY 'Product'[Category]
 - Multiple predicates in one selection → multiple filter arguments to the same `CALCULATETABLE` (AND).
 - Multiple selections → `UNION` the per-selection filter tables inside one `KEEPFILTERS` argument (OR).
 
-Assemble the query string in TypeScript and pass it to `useSemanticModelQuery`. Identical selections reuse the SDK's cache.
+Assemble the query string in TypeScript and pass it to `useSemanticModelQuery`. Identical selections reuse the app-level query cache.
 
 ## Wiring it in the component
 

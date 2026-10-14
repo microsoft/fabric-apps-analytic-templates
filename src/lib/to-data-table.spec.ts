@@ -8,7 +8,7 @@
 import { describe, it, expect } from "vitest";
 import { toDataTable, toRollupDataTables } from "@/lib/to-data-table";
 import type { ColumnMetadataMap } from "@/lib/to-data-table";
-import type { QueryTable } from "@microsoft/fabric-app-data";
+import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 
 describe("toDataTable", () => {
     const queryTable: QueryTable = {

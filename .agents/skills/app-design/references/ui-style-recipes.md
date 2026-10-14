@@ -56,7 +56,7 @@ Use fill color to communicate depth — lighter surfaces sit higher:
 - **Cards** → float above with lighter fill
 - **Popovers/dialogs** → highest elevation, lightest fill
 
-Reinforce with shadows from the shadow scale (`shadow-2` through `shadow-64`). Higher elevation = larger shadow.
+Use `shadow-container-*` for layout surfaces and `shadow-*` for overlays such as popovers, tooltips, dialogs, and menus.
 
 > **Make it yours:** Flat `bg-background` is the safe default, but consider what sits behind the content — a subtle dot grid, gradient mesh, noise texture, or contrasting panel. This one choice defines the app's atmosphere.
 
@@ -132,7 +132,7 @@ Any cluster of related interactive elements — form fields, filter panels, tool
 ### Cards
 
 - **Background**: `bg-card text-card-foreground`
-- **Elevation**: choose shadow, border, or both to separate cards from the page. `shadow-4` + `border` is the baseline default; shadow-only, border-only, or borderless designs are all valid depending on the aesthetic direction.
+- **Elevation**: choose shadow, border, or both to separate cards from the page. `shadow-container-4` + `border` is the baseline default; shadow-only, border-only, or borderless designs are all valid depending on the aesthetic direction.
 - **Internal spacing**: use `px-*` / `py-*` on content areas, `gap-*` between sections
 - **Structure**: compose from header, content, footer sections — don't enforce rigid slots
 - **Visuals**: `VegaVisual` and `DataGrid` draw their own card — pass these classes to `containerClassName` instead of wrapping them.
@@ -156,7 +156,7 @@ These are often left unstyled — don't. They should match the aesthetic directi
 ### Dropdowns / Selects / Menus
 
 - **Surface**: `bg-popover text-popover-foreground`
-- **Shadow**: `shadow-8`
+- **Shadow**: `shadow-md`
 - **Item focus**: `focus:bg-accent focus:text-accent-foreground`
 - **Item spacing**: typically `py-1.5 px-2`
 - **Item typography**: `text-300`
@@ -165,14 +165,14 @@ These are often left unstyled — don't. They should match the aesthetic directi
 ### Tabs
 
 - **Variants**: filled (items against `bg-muted`) or line (underline indicator) — pick what fits the design
-- **Active indicator**: filled uses `bg-background shadow-2`; line uses a pseudo-element underline
+- **Active indicator**: filled uses `bg-background shadow-xs`; line uses a pseudo-element underline
 - **Typography**: `text-300 font-medium`, inactive color at reduced opacity (`text-foreground/60`)
 - **Orientation**: support both horizontal and vertical when using Radix Tabs
 
 ### Dialogs / Modals
 
 - **Overlay**: `bg-black/50` with fade animation is the baseline; tint or adjust opacity to match the aesthetic
-- **Surface**: `bg-background` with `shadow-64` (highest elevation)
+- **Surface**: `bg-background` with `shadow-2xl`
 - **Radius**: match the app's radius scale (baseline: `rounded-xl`)
 - **Width**: responsive — full width on mobile with max-width on larger screens
 - **Close button**: positioned `absolute top-4 right-4`, subtle opacity treatment

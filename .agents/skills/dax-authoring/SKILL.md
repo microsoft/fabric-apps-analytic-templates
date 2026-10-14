@@ -3,7 +3,7 @@ name: dax-authoring
 description: >
   Write and test DAX queries against Power BI semantic models.
   Covers DAX syntax rules, query patterns, time intelligence,
-  and an iterative test workflow using the Fabric CLI query command.
+  and an iterative test workflow that runs queries with `npx rayfin connector invoke`.
 ---
 
 # DAX Authoring
@@ -38,7 +38,7 @@ description: >
 ## Must / Prefer / Avoid
 
 ### Must
-- Always test generated DAX via `npx fabric-app-data query <alias> --query '<DAX>'` before using in app code
+- Always test generated DAX via `npx rayfin connector invoke --name <name> --operation executeQuery --file <payload>.query.json` before using in app code (see [Query Execution](#query-execution))
 - Use fully-qualified `'Table'[Column]` for column references
 - Use simple `[Measure]` for measure references
 - Use DEFINE for VAR and local MEASURE declarations (single DEFINE block, no commas)
@@ -121,24 +121,30 @@ Consult [dax-time-intelligence.md](./references/dax-time-intelligence.md) whenev
 ## Testing & Iteration
 
 1. Generate the DAX query expression
-2. Execute via `npx fabric-app-data query <alias> --query '<DAX>'`
+2. Execute it as described in [Query Execution](#query-execution)
 3. Inspect results: check column names, data types, row counts, and actual data values
 4. If error: consult [dax-core-reference.md](./references/dax-core-reference.md), fix, and re-test
 5. Iterate until the query returns expected results
 
 ## Query Execution
 
-Use `npx fabric-app-data query <alias> --query '<DAX>'` to run queries. This uses the same SDK pipeline as the running app, so results are identical to what the app produces at runtime. To re-test an existing `.dax` file without copying the query text, use `--file`: `npx fabric-app-data query <alias> --file src/queries/revenue.dax`. For full CLI options (profiles, result limits), see the `fabric-cli` skill.
+Write the JSON operation input `{ "query": "<DAX>" }` to a payload file inside the project (for example `./inspection/<name>.query.json`) with a file API, then run:
 
-**Result trimming:** The CLI returns at most 1000 rows by default. When the result is trimmed, the output includes a `_cliWarning` field (e.g., `"Result trimmed to first 1000 of 5000 rows"`). This is a CLI-only limitation — the full dataset is available in the running app. If you need to see more data, refine your DAX with filters or aggregations.
+```powershell
+npx rayfin connector invoke --name <name> --operation executeQuery --file ./inspection/<name>.query.json
+```
+
+This is the form `AGENTS.md` prescribes; see it for prerequisites and payload rules. Do not pass DAX inline with `--input '{"query":"..."}'`: shells mangle the nested quotes (PowerShell strips them when calling `npx`), so the CLI receives invalid JSON, and DAX from the model or the user must never be placed on a command line. `--file` expects that JSON payload, not a raw `.dax` file, and the file must be inside the project.
+
+The query runs against the same semantic model the app queries, so the column names and row shape are what the app will receive; `dataType` is the exception, as `AGENTS.md` explains.
+
+**Row count:** a query returns every row unless you bound it. Bound the result in the DAX itself with `TOPN(...)` or an aggregation. To cap an exploratory query, add `resultSetRowCountLimit` to the payload (`{ "query": "...", "resultSetRowCountLimit": 100 }`); it truncates silently, so a result with exactly that many rows may be incomplete. A result too large to print is written to a file under `rayfin/.temp/invoke-results` and only a preview is shown, so read that file rather than treating the preview as the whole result — or pass `--output-file <path>` to choose where the full result lands.
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| CLI `query` fails with "not signed in" | Run `az login` to sign in to Azure CLI |
-| CLI `query` fails with "Azure CLI is not installed" | Install from https://aka.ms/install-azure-cli |
-| CLI `query` fails with "alias not found" | Run `npx fabric-app-data list` to check available aliases, then `npx fabric-app-data add` to register |
+| CLI `invoke` fails with "connector not found" | Run `npx rayfin connector list` to check declared connectors, then `npx rayfin connector add` to register (see `AGENTS.md`) |
 | DAX syntax errors | Consult [dax-core-reference.md](./references/dax-core-reference.md) — check reserved keywords, quoting rules, EVALUATE/scalar mistakes |
 | Unexpected query results | Check filter context, relationship direction, BLANK handling in [dax-core-reference.md](./references/dax-core-reference.md#blank-semantics) |
 | Time intelligence returns wrong values | Check date table prerequisites and critical rules in [dax-time-intelligence.md](./references/dax-time-intelligence.md) |

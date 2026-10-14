@@ -113,7 +113,7 @@ const columnMetadata: ColumnMetadataMap = {
 };
 ```
 
-Test the query with the Fabric CLI. Verify that the flag values are booleans, and copy the exact returned rollup flag name into the conversion options rather than assuming its serialized form.
+Test the query with `npx rayfin connector invoke --name <connector> --operation executeQuery --file <payload>.query.json`, as `AGENTS.md` describes. Verify that the flag values are booleans, and copy the exact returned rollup flag name into the conversion options rather than assuming its serialized form.
 
 ## Rendering in DataGrid
 

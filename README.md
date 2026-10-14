@@ -12,7 +12,7 @@ View our [Microsoft Learn documentation](https://learn.microsoft.com/fabric/apps
 
 1. **Node.js (v22)**: Download and install from https://nodejs.org/dist/v22.22.2/node-v22.22.2-x64.msi
 2. **GitHub Copilot CLI**: Refer to https://github.com/github/copilot-cli
-3. **Azure CLI**: Install from https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest. After installation, run `az login` in your terminal to sign in to your Azure account.
+3. **Fabric account**: A Microsoft Entra account with access to the Fabric workspace and the semantic model. You sign in through the project's own Rayfin CLI (see the steps below); the Azure CLI is not required.
 
 ## Instructions for building a new web app
 
@@ -20,6 +20,7 @@ View our [Microsoft Learn documentation](https://learn.microsoft.com/fabric/apps
 1. **Clone this repo**: Run `git clone <REPO_URL> <repo_name>`. Replace `<REPO_URL>` with this repository's URL and `<repo_name>` with the name you want for your project folder.
 1. **Navigate to the repo folder**: Run `cd <repo_name>`. (Optional: Run `code` to open VS Code in that folder and open Terminal inside VS Code.)
 1. **Install dependencies**: Run `npm install`.
+1. **Sign in**: Run `npx rayfin login`, and confirm with `npx rayfin login status`. Copilot queries your semantic model through this sign-in.
 1. **Launch Copilot**: Run `copilot` to start the Copilot CLI. Then type a prompt for what you want to build. Include the dataset ID of the semantic model (from Power BI Service) that you want to use and the URI of the Fabric workspace where the app should be provisioned. (To get the dataset ID, copy the value between `...dataset/` and `/overview...` from the URL.)
 1. **Preview your app**: After Copilot is done, run `npm run dev` and leave the development server running.
 1. **Open Fabric shell**: Navigate to the workspace in Fabric portal and open the artifact. Then append `&devUri=http://localhost:5173` at the end. This allows you to preview your app.
