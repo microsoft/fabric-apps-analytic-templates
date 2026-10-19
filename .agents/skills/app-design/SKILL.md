@@ -22,13 +22,13 @@ Pick fonts that set the app's character — this is one of the strongest signals
 
 Load fonts via Google Fonts (or another CDN) as `<link>` tags in `index.html`, include `crossorigin="anonymous"` on each font stylesheet link, then update the font family tokens in the `@theme` block of `global.css`.
 
-Style the primary page heading with `font-page-title text-page-title text-page-title-foreground` and its subtitle with `font-page-subtitle text-page-subtitle`.
+Style the primary page heading with `font-page-title text-page-title text-emphasis-foreground` and its subtitle with `font-page-subtitle text-page-subtitle`.
 
 ### Theming Workflow
 
 Start by customizing `src/global.css` — this is the single source of truth for the app's active visual identity. Every component uses these tokens, so setting them first means the entire UI shifts together.
 
-1. **Colors**: Customize the semantic color tokens (`--color-primary`, `--color-background`, `--color-card`, `--color-border`, etc.) in their existing blocks and corresponding `.dark` overrides. The defaults are neutral blue/grey — make them yours.
+1. **Colors**: Customize the semantic color tokens (`--color-brand`, `--color-background`, `--color-card`, `--color-border`, etc.) in their existing blocks and corresponding `.dark` overrides. The defaults are neutral blue/grey — make them yours.
 2. **Data palette**: Follow the [data color rules](../visuals/references/formatting.md#categorical-color-palette), including `.dark` overrides. Populate `src/data-palette-presets.json` with three alternatives distinct from the active palette, each with a kebab-case `id`, a concise `name`, and `colors.light` / `colors.dark` arrays of exactly ten six-digit hex colors in token order.
 3. **Radius**: Adjust `--radius` (the base radius) and the radius scale to match the tone — sharp/geometric (lower values), soft/rounded (higher values), or pill-shaped (`--radius-full`).
 4. **Fonts**: Update the font family tokens as described in the Typography section above.
@@ -111,7 +111,7 @@ Include a light/dark mode toggle in the app header or toolbar. Use the `useAppTh
 All styling must use the design tokens defined in `src/global.css` via Tailwind utility classes. Never hardcode raw color values, pixel sizes, or font stacks — raw values are only permitted in `global.css` and `src/data-palette-presets.json`. Refer to `global.css` for available tokens, their values, and expected usage.
 
 Examples:
-- `bg-primary text-primary-foreground` — not `bg-blue-600 text-white`
+- `bg-brand text-on-brand` — not `bg-blue-600 text-white`
 - `text-300` — not `text-sm` or `text-[14px]`
 - `p-4 gap-3` — not `p-[16px] gap-[12px]`
 - `font-semibold` — not `font-[600]`

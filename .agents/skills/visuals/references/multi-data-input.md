@@ -58,28 +58,7 @@ These describe what the named-map mechanism renders. Producing the underlying ta
 }
 ```
 
-**Subset overlay on a dimmed baseline** — a full dataset drawn dim, a second dataset drawn bright on the same axis. Both layers encode the same fields; the bright layer's marks appear only at the axis keys its rows supply:
-
-```json
-{
-  "layer": [
-    { "data": { "name": "all" }, "mark": { "type": "bar", "opacity": 0.3 },
-      "encoding": { "x": { "field": "Category" }, "y": { "field": "Sales", "type": "quantitative" } } },
-    { "data": { "name": "highlighted" }, "mark": "bar",
-      "encoding": { "x": { "field": "Category" }, "y": { "field": "Sales", "type": "quantitative" } } }
-  ]
-}
-```
-
-Swap the second table to change what the bright layer shows; pass only `{ all }` to render the baseline alone.
-
-```tsx
-<VegaVisual
-  spec={vegaLiteSpec}
-  data={highlighted ? { all, highlighted } : { all }}
-  theme={theme}
-/>
-```
+**Subset overlay on a dimmed baseline** — a full dataset drawn dim, a second dataset drawn bright on the same axis. Follow the visual-interactivity skill's [highlight queries](../../visual-interactivity/references/highlight-queries.md) for aligned subset queries, the layered spec, and selection-driven component wiring.
 
 **Axis spine** — an invisible point mark over a table listing every member pins the axis domain so a sparse measure layer doesn't drop categories:
 
@@ -100,22 +79,7 @@ Swap the second table to change what the bright layer shows; pass only `{ all }`
 
 ## Native selection — no named map needed
 
-When an interaction stays within a single visual (clicking a bar to dim the others, hovering a point to emphasize matches), Vega-Lite's native selection with a conditional encoding handles it from one table — no named map, no second dataset.
-
-```json
-{
-  "params": [{ "name": "sel", "select": { "type": "point", "fields": ["Category"] } }],
-  "mark": "bar",
-  "encoding": {
-    "x": { "field": "Category", "type": "nominal" },
-    "y": { "field": "Sales", "type": "quantitative" },
-    "opacity": {
-      "condition": { "param": "sel", "value": 1, "empty": false },
-      "value": 0.3
-    }
-  }
-}
-```
+When an interaction stays within a single visual (clicking a bar to dim the others, hovering a point to emphasize matches), Vega-Lite's native selection with a conditional encoding handles it from one table — no named map, no second dataset. Follow the visual-interactivity skill's [native selections](../../visual-interactivity/references/native-selections.md) guidance.
 
 ## Caveats
 

@@ -3,7 +3,7 @@ name: dax-authoring
 description: >
   Write and test DAX queries against Power BI semantic models.
   Covers DAX syntax rules, query patterns, time intelligence,
-  and an iterative test workflow that runs queries with `npx rayfin connector invoke`.
+  and an iterative test workflow using `npx fabric-app-semantic-model-tools run-dax-query --dax <file> --alias <name>`.
 ---
 
 # DAX Authoring
@@ -38,16 +38,27 @@ description: >
 ## Must / Prefer / Avoid
 
 ### Must
-- Always test generated DAX via `npx rayfin connector invoke --name <name> --operation executeQuery --file <payload>.query.json` before using in app code (see [Query Execution](#query-execution))
+- Always test generated DAX before using it in app code. Execute each planned `.dax` file once
+  through `npx fabric-app-semantic-model-tools run-dax-query` and compare its report with the schema-query plan
+- Run DAX through `run-dax-query`, not `npx rayfin connector invoke`; `run-dax-query` runs Rayfin CLI
+  calls one at a time.
 - Use fully-qualified `'Table'[Column]` for column references
 - Use simple `[Measure]` for measure references
 - Use DEFINE for VAR and local MEASURE declarations (single DEFINE block, no commas)
-- Prefer existing model measures over re-aggregating raw data
+- Use existing model measures for requested business metrics. Raw aggregation is allowed only when
+  the schema workflow established that no suitable shipped measure exists. Never replace a shipped
+  measure with raw `SUM`, `COUNT`, `COUNTROWS`, `AVERAGE`, `DISTINCTCOUNT`, or a local
+  approximation
+- Generate DAX from the completed schema-query plan; do not rediscover or substitute model objects
+- Do not implement the UI until the final DAX has executed successfully and its output passes the
+  planned shape and semantic validation gates, with every warning resolved or explained by the
+  request
 
 ### Prefer
 - SUMMARIZECOLUMNS as the primary grouping function for queries
 - TREATAS for filter arguments in SUMMARIZECOLUMNS
 - Variables (VAR) to improve readability and avoid repeated calculations
+- Shipped measures from measure-heavy KPI tables
 
 ### Avoid
 - SQL keywords (SELECT, WHERE, HAVING, etc.) within DAX expressions
@@ -120,31 +131,89 @@ Consult [dax-time-intelligence.md](./references/dax-time-intelligence.md) whenev
 
 ## Testing & Iteration
 
-1. Generate the DAX query expression
-2. Execute it as described in [Query Execution](#query-execution)
-3. Inspect results: check column names, data types, row counts, and actual data values
-4. If error: consult [dax-core-reference.md](./references/dax-core-reference.md), fix, and re-test
-5. Iterate until the query returns expected results
+1. Use the completed schema-query plan: exact shipped measures, grouping columns, filters,
+   relationship path, expected columns, and row shape
+2. Author one `EVALUATE` for each distinct query the plan requires, and execute each final query
+   once with `run-dax-query` (see [Query Execution](#query-execution))
+3. Treat an execution error as a query failure. A successful result is not by itself proof of
+   correctness, and an empty one is not an error. Compare the reported columns, row count, sample,
+   and warnings with the plan's exact output columns, row shape, filters, ordering, grain, and
+   value expectations
+4. Reject all-blank output, unexplained all-zero grouped output, distinct requested outputs that
+   repeat the same measure/value, and all-rank-1 output when comparison or ordering is expected.
+   These are semantic mismatches even when the command succeeds; do not build the UI from them
+5. If an error or semantic mismatch remains, inspect the output-binding map, helper or parameter
+   filter context, relationships, and filters; consult
+   [dax-core-reference.md](./references/dax-core-reference.md), make one evidence-based correction
+   to only the failing query, and re-test it
+6. Stop each distinct planned query after it returns a structurally and semantically consistent
+   result. Across the task, run one optional grain diagnostic for a shared ambiguity; for each
+   distinct query, run one validation and at most one evidence-based corrective retry. Do not use
+   this allowance for exploratory model probing or repeated discovery
+
+Preserve the selected candidate by editing the validated query rather than regenerating it.
+
+### Result reuse and stopping
+
+- Before running a query, check whether a previous result already contains the answer. Never rerun
+  an identical or equivalent DAX query.
+- A zero scalar is valid. An all-zero grouped result is not validated for a task that expects
+  meaningful comparison unless task or catalog evidence shows that all zeros are legitimate.
+- For a blank or empty result, inspect the shipped measure, relationship path, grouping dimension,
+  helper-table filter context, and filters. Make one correction; accept a corrected blank only when
+  the requested semantics allow no data.
+- If every grouped row returns the same measure value, first investigate a disconnected grouping
+  table or ineffective filter propagation. Do not rewrite or replace the measure to manufacture
+  variation.
+- If every row ranks 1, verify that the rank expression evaluates over the intended comparison set
+  and that filters did not collapse that set before accepting the result.
+- On timeout, narrow filters, reduce grouping cardinality, apply `TOPN`, or simplify only the
+  failing planned query. Never retry the same query unchanged.
+- Preserve successful batched outputs. Correct only failed or semantically inconsistent files.
 
 ## Query Execution
 
-Write the JSON operation input `{ "query": "<DAX>" }` to a payload file inside the project (for example `./inspection/<name>.query.json`) with a file API, then run:
+Use:
 
-```powershell
-npx rayfin connector invoke --name <name> --operation executeQuery --file ./inspection/<name>.query.json
+```bash
+npx fabric-app-semantic-model-tools run-dax-query \
+  --dax src/queries/revenue.dax \
+  --alias <alias>
 ```
 
-This is the form `AGENTS.md` prescribes; see it for prerequisites and payload rules. Do not pass DAX inline with `--input '{"query":"..."}'`: shells mangle the nested quotes (PowerShell strips them when calling `npx`), so the CLI receives invalid JSON, and DAX from the model or the user must never be placed on a command line. `--file` expects that JSON payload, not a raw `.dax` file, and the file must be inside the project.
+Each `.dax` file must contain one `EVALUATE`; otherwise nothing executes. For two to four planned
+queries, repeat `--dax` in one call:
 
-The query runs against the same semantic model the app queries, so the column names and row shape are what the app will receive; `dataType` is the exception, as `AGENTS.md` explains.
+```bash
+npx fabric-app-semantic-model-tools run-dax-query --dax src/queries/a.dax --dax src/queries/b.dax --alias <alias>
+```
 
-**Row count:** a query returns every row unless you bound it. Bound the result in the DAX itself with `TOPN(...)` or an aggregation. To cap an exploratory query, add `resultSetRowCountLimit` to the payload (`{ "query": "...", "resultSetRowCountLimit": 100 }`); it truncates silently, so a result with exactly that many rows may be incomplete. A result too large to print is written to a file under `rayfin/.temp/invoke-results` and only a preview is shown, so read that file rather than treating the preview as the whole result — or pass `--output-file <path>` to choose where the full result lands.
+The queries run one at a time, through the same connector operation as the running app. For each
+query the command prints its status, output column names, row count, first rows
+(`--sample <n>`, default 5), and warnings, not the full result. Warnings flag no rows, an all-blank
+column, or a measure output (not a `Table[Column]` grouping column) that is all zero, constant, all
+rank 1, or identical to another output; identical outputs are reported as one group. Warnings are
+nonfatal prompts for review, not proof of correctness. A shortened preview is not complete shape
+evidence.
+
+A failed query keeps its own entry beside the successful ones, and the call exits 2: correct only
+the failed queries. Missing, malformed, unreadable, or overflowed results never pass, and input or
+read failures also exit nonzero; an error message alone does not show that a query ran. An
+`overflow` result has no table; see
+[semantic-model-data](../semantic-model-data/SKILL.md#error-categories).
+
+**Row count:** a query returns every row unless you bound it. Bound it with the aggregation the plan
+calls for, and use `TOPN(...)` only when the request asks for a ranked subset or to bound a query
+that timed out. `--limit <n>` is a guard, not a cap: validation fails when more than `n` rows come
+back.
+
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| CLI `invoke` fails with "connector not found" | Run `npx rayfin connector list` to check declared connectors, then `npx rayfin connector add` to register (see `AGENTS.md`) |
+| A connector query fails because no Power BI token can be acquired without a sign-in prompt | Follow the recovery text printed with the error; re-running `npx rayfin login` does not fix it. |
+| `query-schema` cannot resolve the connector, or a query names a connector that `rayfin/rayfin.yml` does not declare | Run `npx rayfin connector list` to check declared connectors, then `npx rayfin connector add` to register the intended model (see `AGENTS.md`) |
 | DAX syntax errors | Consult [dax-core-reference.md](./references/dax-core-reference.md) — check reserved keywords, quoting rules, EVALUATE/scalar mistakes |
 | Unexpected query results | Check filter context, relationship direction, BLANK handling in [dax-core-reference.md](./references/dax-core-reference.md#blank-semantics) |
 | Time intelligence returns wrong values | Check date table prerequisites and critical rules in [dax-time-intelligence.md](./references/dax-time-intelligence.md) |

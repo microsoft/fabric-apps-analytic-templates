@@ -46,10 +46,10 @@ Every Vega-Lite spec should set `width: "container"` and `height: "container"` �
 Charts must fill their cell's visible height — no dead space, no cropping. This requires a **complete height chain** from the grid/flex cell down to the chart:
 
 1. **Grid/flex cell** → provides the height
-2. **Layout wrapper** → `h-full` so the cell's height becomes definite
-3. **VegaVisual / DataGrid** → self-frames in a `VisualContainer` that fills the wrapper and sizes the visual
+2. **VegaVisual / DataGrid root** → `containerRootClassName` controls grid/flex placement and whole-frame sizing
+3. **VisualContainer card and body** → fill the root and size the visual
 
-The wrapper is for *layout only* — grid placement and height. Card chrome belongs on the VisualContainer.
+For React, place self-framing visuals directly in the grid and put span and height utilities on `containerRootClassName`. Card chrome belongs on `containerClassName`, which styles the inner card surface, not the grid item. A hand-authored `VisualContainer` uses `rootClassName` for layout and `className` for card chrome.
 
 If a chart appears squished, trace the height chain upward — typically a missing `h-full` on an intermediate wrapper.
 
@@ -66,6 +66,7 @@ Use layout-aware checks:
 
 - Grid layouts: `minHeight` on the grid container is generally acceptable because grid tracks provide definite row heights.
 - Standalone full-width chart sections: prefer explicit `height` on the section/container when using `h-full` card/chart wrappers.
+- Virtualized `DataGrid` components: provide a definite height, such as `containerRootClassName="h-96"`; minimum height alone does not constrain the scrolling viewport.
 
 ### Chart titles
 

@@ -117,17 +117,28 @@ The same alias is what `sort.field`, `tooltip`, and `text` encodings must refere
 
 ## Encoding Type Selection
 
-### When to use `temporal` vs `quantitative` for date/year fields
+### Choose encoding types by meaning, not storage type
 
-Vega-Lite's `"temporal"` type interprets raw numeric values as **Unix epoch milliseconds** (milliseconds since Jan 1, 1970). This means plain year integers like `1900` or `2023` will be misinterpreted as timestamps within the first few seconds of 1970, producing garbled axis labels (e.g., ".905" instead of "1905").
+A numeric query result does not necessarily represent a quantitative measure. Inspect both the returned values and the field's role in the chart before choosing its encoding type.
 
-**Use `"temporal"` only when** the data contains actual date/time values:
-- ISO 8601 strings (e.g., `"2023-06-15"`, `"2023-06-15T10:30:00Z"`)
-- Unix timestamps in milliseconds (e.g., `1686816000000`)
+| Field meaning | Encoding | Example |
+|---|---|---|
+| Ordered categories, including integer calendar years | `ordinal` | Release year: 1996, 1997, 1998 |
+| Unordered categories or identifiers, even when numeric | `nominal` | Store ID, product code |
+| Measured quantities where numeric distance matters | `quantitative` | Revenue, count, duration |
+| Actual date/time values on a chronological scale | `temporal` | ISO date strings or epoch milliseconds |
 
-**Use `"quantitative"` when** the data contains plain year integers (e.g., `1900`, `2017`). If the column metadata omits `format` (or uses `"0"` to suppress grouping separators), the axis will display clean integer years.
+For annual category charts, use an explicitly ascending ordinal axis:
 
-**How to decide:** Before setting the encoding type, check what the DAX query actually returns. If the column is an integer year (no date parts like month/day), use `"quantitative"`. If the column is a full date or datetime value, use `"temporal"`.
+```json
+{
+  "encoding": {
+    "x": { "field": "Year", "type": "ordinal", "sort": "ascending" }
+  }
+}
+```
+
+Ordinal axes give categories equal spacing. If missing years must create proportionally larger gaps, use a continuous temporal axis with actual date values. Use `temporal` only with actual date/time values, such as ISO 8601 strings (`"2023-06-15"`, `"2023-06-15T10:30:00Z"`) or Unix timestamps in milliseconds (`1686816000000`). Do not pass bare year integers directly to `temporal`: Vega-Lite interprets them as epoch milliseconds, not calendar years.
 
 ## Props
 

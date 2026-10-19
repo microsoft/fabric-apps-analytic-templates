@@ -6,15 +6,9 @@ Power BI semantic models store format strings on columns and measures (`FormatSt
 
 Most model format strings are static (e.g., `"$#,##0.00"`, `"0.0%"`, `"yyyy-MM-dd"`). The `ColumnDef.format` field in `@microsoft/fabric-visuals-core` accepts VBA/ECMA-376 format strings — the same syntax used in Power BI semantic models. **No translation is needed**: copy the model's `FormatString` value directly into `columnMetadata.format`.
 
-```dax
-// Discovery: fetch measure format strings
-EVALUATE
-  SELECTCOLUMNS(
-    FILTER(INFO.VIEW.MEASURES(), [Table] = "Sales"),
-    "Measure", [Name],
-    "Format", [FormatString]
-  )
-ORDER BY [Measure]
+```bash
+# Discovery: read measure format strings from the catalog
+npx fabric-app-semantic-model-tools query-schema "SELECT [Name], [FormatString] FROM info_view_measures WHERE [Table] = 'Sales'"
 ```
 
 ```typescript
@@ -22,7 +16,7 @@ ORDER BY [Measure]
 export const columnMetadata: ColumnMetadataMap = {
   "[Total Revenue]": { name: "Total Revenue", displayName: "Revenue", format: "$#,##0.00" },
   "[Margin %]":      { name: "Margin",        displayName: "Margin",  format: "0.00%" },
-  "'Calendar'[Date]": { name: "CalendarDate", displayName: "Date",    format: "yyyy-mm-dd" },
+  "Calendar[Date]":   { name: "CalendarDate", displayName: "Date",    format: "yyyy-mm-dd" },
 };
 ```
 
@@ -51,7 +45,7 @@ The resolved format string arrives as a per-row VBA/ECMA-376 string. Because the
 
 ```
 Semantic Model (FormatString)
-  ├── static: read at discovery time via INFO.VIEW.*
+  ├── static: read from the catalog's [FormatString] with query-schema
   └── dynamic: query alongside measure values via IGNORE()
         ↓
 Factory file (columnMetadata.format) — or per-row format values for dynamic

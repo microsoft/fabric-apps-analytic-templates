@@ -11,6 +11,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
 import { createServer } from 'vite';
 
 const execFileAsync = promisify(execFile);
@@ -141,6 +142,10 @@ async function loadVisualDefinition(server, projectRoot, factoryPath, params) {
  * Rayfin rejects `--file` paths outside the project, so the short-lived payload
  * directory is created inside the app (and ignored by git) rather than in the OS temp directory.
  *
+ * The CLI runs under the Rayfin CLI lock from `@microsoft/fabric-app-semantic-model-tools`:
+ * Rayfin CLI calls run one at a time across processes, because two CLIs that start together can
+ * lose the saved login.
+ *
  * The payload caps the result at {@link QUERY_ROW_LIMIT} rows, so a visual is validated
  * against at most its first 1000 rows. The result is read back from `--output-file` rather
  * than from the JSON envelope: the CLI shrinks an inline result larger than 8 KB to a preview,
@@ -164,12 +169,12 @@ async function executeQuery(projectRoot, connection, query) {
         const args = buildQueryCliArgs(cliEntry, connection, payloadPath, resultPath);
 
         try {
-            const { stdout } = await execFileAsync(process.execPath, args, {
+            const { stdout } = await withRayfinCliLock(() => execFileAsync(process.execPath, args, {
                 cwd: projectRoot,
                 maxBuffer: 20 * 1024 * 1024,
                 timeout: 120_000,
                 windowsHide: true,
-            });
+            }));
             assertResultFile(parseInvokeEnvelope(stdout), resultPath);
         } catch (error) {
             if (

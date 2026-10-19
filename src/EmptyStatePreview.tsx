@@ -628,7 +628,7 @@ function FormGhost({ delay = 0 }: { delay?: number }) {
                         className="flex flex-col gap-2"
                     >
                         <div className={`h-2 ${f.labelW} rounded-full bg-foreground/[0.12]`} />
-                        <div className="flex h-6 w-full items-center border border-input bg-background px-3 rounded-2xl">
+                        <div className="flex h-6 w-full items-center border border-border bg-background px-3 rounded-2xl">
                             <div className="h-2 w-32 rounded-full bg-foreground/[0.12]" />
                         </div>
                     </motion.div>

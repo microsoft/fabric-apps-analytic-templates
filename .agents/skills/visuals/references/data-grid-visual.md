@@ -51,7 +51,7 @@ Use DataGrid-computed totals only for additive sums or a count of fetched leaf r
 
 - **Provided mode:** Pass an authoritative `DataTable` through `grandTotals.data`; DataGrid bypasses body-column `defaultAggregation`.
 - **Computed mode:** Pass `grandTotals` without `data` and set `defaultAggregation` on body columns. `data: undefined` enters this path but does not render a totals row by itself; no row renders when no column declares a supported aggregation. DataGrid currently honors only `"sum"` and `"count"`.
-- **Filtering:** DataGrid filtering is enabled by default, but provided totals do not update automatically. Keep body rows available for local filtering and pass `onFilterChange` selections through `ROLLUPADDISSUBTOTAL`'s grand-total-only filter before re-querying.
+- **Filtering:** DataGrid filtering is enabled by default, but provided totals do not update automatically. Keep body rows available for local filtering and pass `onFilterChange` selections through `ROLLUPADDISSUBTOTAL`'s grand-total-only filter before re-querying. Follow the visual-interactivity skill's [filter-aware grid totals](../../visual-interactivity/references/filter-aware-grid-totals.md) guidance.
 - **Mapping and formatting:** Provided values map by `ColumnDef.name` and use the provided table's column formats.
 - **Label:** DataGrid displays `Total` by default. To override it, set the provided totals row's first leaf-column value; DataGrid displays that value instead.
 
@@ -90,7 +90,7 @@ const { theme } = useThemeContext();
       <div className="flex items-center gap-2">
         <div className="h-2 w-full rounded-full bg-muted">
           <div
-            className="h-2 rounded-full bg-primary"
+            className="h-2 rounded-full bg-brand"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -177,7 +177,7 @@ import { CellTooltip } from "@microsoft/fabric-datagrid";
     const name = String(value ?? "");
     const detail = String(row["email"] ?? "");
     return (
-      <CellTooltip content={<div className="rounded-xl border bg-popover p-4 shadow-lg"><p>{name}</p><p>{detail}</p></div>}>
+      <CellTooltip content={<div className="rounded-xl border bg-card p-4 shadow-lg"><p>{name}</p><p>{detail}</p></div>}>
         <span>{name}</span>
       </CellTooltip>
     );

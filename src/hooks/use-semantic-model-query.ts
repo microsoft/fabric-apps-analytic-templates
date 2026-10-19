@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { SemanticModelQueryResult } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { ConnectorsError } from "@microsoft/rayfin-connectors";
 import { NetworkError, SdkError, type WorkloadFailure } from "@microsoft/rayfin-lib";
+import type { SemanticModelConnectors } from "@/lib/connectors";
 import { getRayfinClient } from "@/lib/rayfin-client";
 import { cachedQuery, cachePrefixKeyFor, clearCachedQueries, type CachedQueryResult } from "@/lib/query-cache";
 
@@ -137,7 +138,10 @@ async function executeSemanticModelQuery(
     query: string,
 ): Promise<SemanticModelQueryResult> {
     try {
-        return await getRayfinClient().connectors[connection].executeQuery({ query });
+        // The generated schema lists only the scaffolded names (none in the template); the hook
+        // takes any name, and an unknown one throws, which is reported below.
+        const connectors = getRayfinClient().connectors as SemanticModelConnectors;
+        return await connectors[connection].executeQuery({ query });
     } catch (err) {
         return toThrownQueryResult(err, connection);
     }

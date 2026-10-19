@@ -36,7 +36,7 @@ export function AuthGate({ children }: AuthGateProps) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background p-4">
                 <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 text-center shadow-container-8">
-                    <h1 className="mb-2 text-500 font-semibold leading-500 text-card-foreground">
+                    <h1 className="mb-2 text-500 font-semibold leading-500 text-emphasis-foreground">
                         Sign in to open this app
                     </h1>
                     <p className="mb-6 text-300 leading-300 text-muted-foreground">
@@ -47,7 +47,7 @@ export function AuthGate({ children }: AuthGateProps) {
                         onClick={signIn}
                         disabled={isSigningIn}
                         aria-busy={isSigningIn}
-                        className="rounded-lg bg-primary px-4 py-2 text-300 font-semibold text-primary-foreground hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-lg bg-brand px-4 py-2 text-300 font-semibold text-on-brand hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {isSigningIn ? "Signing in…" : "Sign in with Fabric"}
                     </button>
