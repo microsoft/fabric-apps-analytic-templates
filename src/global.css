@@ -7,9 +7,10 @@
 /* These tokens are consumed directly as CSS variables, so emit them
    even when no Tailwind utility references them. */
 @theme static {
-  --color-brand:            #0f6cbd;  /* bar/area fills, button-like brand surfaces */
-  --color-brand-foreground: #0f6cbd;  /* line/point marks, branded text & emphasis */
-  --color-hover:            #f5f5f5;  /* row/cell hover surface in DataGrid + visuals */
+  --color-brand:            #0f6cbd;  /* branded surfaces */
+  --color-brand-foreground: #0f6cbd;  /* brand-colored content on standard surfaces */
+  --color-hover:            rgba(0, 0, 0, 0.04);  /* row/cell hover surface in DataGrid + visuals */
+  --color-emphasis-foreground: #242424;  /* page and visual titles, KPI values */
   --font-page-title: var(--font-heading);
   --font-page-subtitle: var(--font-base);
   --font-visual-title: var(--font-heading);
@@ -24,29 +25,18 @@
 
 @theme {
   /* Color tokens — light theme
-     Usage: bg-*, text-*, border-* (e.g. bg-primary text-primary-foreground)
-     Each token has a -foreground pair for text on that surface. */
+     Usage: bg-*, text-*, border-* (e.g. bg-brand text-on-brand). */
   --color-background: #ffffff;                                       /* page background */
   --color-foreground: #242424;                                       /* default text */
-  --color-page-title-foreground: #242424;                            /* primary page heading text */
 
-  --color-card: #ffffff;                                             /* card surfaces */
-  --color-card-foreground: #242424;
+  --color-card: #ffffff;                                             /* card and elevated surfaces */
 
-  --color-popover: #ffffff;                                          /* popover/dropdown surfaces */
-  --color-popover-foreground: #242424;
-
-  --color-primary: #0f6cbd;                                          /* primary actions & buttons */
-  --color-primary-foreground: #ffffff;
-
-  --color-secondary: #fafafa;                                        /* secondary actions */
-  --color-secondary-foreground: #242424;
+  --color-on-brand: #ffffff;                                         /* text/icons on brand surfaces */
 
   --color-muted: #f0f0f0;                                            /* subtle backgrounds */
   --color-muted-foreground: #616161;                                 /* subdued text */
 
   --color-accent: #f5f5f5;                                           /* accent highlights */
-  --color-accent-foreground: #242424;
 
   --color-destructive: #b10e1c;                                      /* errors & destructive actions */
   --color-destructive-foreground: #ffffff;
@@ -55,7 +45,6 @@
   --color-success-foreground: #ffffff;
 
   --color-border: #e0e0e0;                                           /* default border */
-  --color-input: #e0e0e0;                                            /* input field borders */
   --color-ring: #0f6cbd;                                             /* focus rings */
 
   --shadow-container-2:  var(--shadow-xs);
@@ -151,22 +140,13 @@
     --color-foreground: #ffffff;
 
     --color-card: #292929;
-    --color-card-foreground: #ffffff;
 
-    --color-popover: #292929;
-    --color-popover-foreground: #ffffff;
-
-    --color-primary: #115ea3;
-    --color-primary-foreground: #ffffff;
-
-    --color-secondary: #1f1f1f;
-    --color-secondary-foreground: #ffffff;
+    --color-on-brand: #ffffff;
 
     --color-muted: #141414;
     --color-muted-foreground: #adadad;
 
     --color-accent: #3d3d3d;
-    --color-accent-foreground: #ffffff;
 
     --color-destructive: #dc626d;
     --color-destructive-foreground: #ffffff;
@@ -175,13 +155,12 @@
     --color-success-foreground: #ffffff;
 
     --color-border: #525252;
-    --color-input: #525252;
     --color-ring: #479ef5;
 
     --color-brand:            #115ea3;
     --color-brand-foreground: #479ef5;
-    --color-hover:            #3d3d3d;
-    --color-page-title-foreground: #ffffff;
+    --color-hover:            rgba(255, 255, 255, 0.09);
+    --color-emphasis-foreground: #ffffff;
   }
 }
 

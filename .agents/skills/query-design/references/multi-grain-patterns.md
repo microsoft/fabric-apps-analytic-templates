@@ -13,7 +13,7 @@ When a component needs data at multiple grains, return each metric at the grain 
 
 ## File organization
 
-Follow the template’s [Query & Spec Organization](../../../../AGENTS.md#query--spec-organization) conventions.
+Follow the template’s [Query and spec organization](../../../../AGENTS.md#query-and-spec-organization) conventions.
 
 - **DataGrid body and grand total:** Use one `.dax` file and one factory. The query returns both as flagged rows.
 - **Independent datasets:** Use one `.dax` file and factory per result table. Keep the shared Vega-Lite spec with the primary visualization factory and re-export every factory through the appropriate barrel.
@@ -52,17 +52,12 @@ DEFINE
   VAR _BodyFilter =
     TREATAS({<body-filter-values>}, '<FilterDimension>'[<FilterColumn>])
 
-  // Current local DataGrid selection: constrains only the grand total.
-  VAR _GrandTotalFilter =
-    TREATAS({<selected-values>}, '<GridDimension>'[<GridColumn>])
-
   // Maximum number of body rows to return.
   VAR _MaxBodyRows = 500
 
   VAR _RollupResult =
     SUMMARIZECOLUMNS(
       ROLLUPADDISSUBTOTAL(
-        _GrandTotalFilter,
         ROLLUPGROUP(
           '<Dimension1>'[<Column1>],
           '<Dimension2>'[<Column2>]
@@ -95,13 +90,13 @@ ORDER BY
   '<Dimension2>'[<Column2>] ASC
 ```
 
-`_BodyFilter` is a regular `SUMMARIZECOLUMNS` filter, so it constrains both body and grand-total evaluation. Add one variable per application or page filter and pass each one as a `SUMMARIZECOLUMNS` filter argument. `_GrandTotalFilter` is the optional first argument to `ROLLUPADDISSUBTOTAL`; it updates the total for DataGrid's current local selection without removing body rows that DataGrid still needs for client-side filtering. When no local grid filter is active, omit `_GrandTotalFilter` and that argument.
+`_BodyFilter` is a regular `SUMMARIZECOLUMNS` filter, so it constrains both body and grand-total evaluation. Add one variable per application or page filter and pass each one as a `SUMMARIZECOLUMNS` filter argument.
 
-For multiple local grid filters, create one `TREATAS` table per known filterable column and combine them with `CROSSJOIN` for the `grandtotalFilter`. The factory must map column IDs to known DAX columns and escape values; never interpolate arbitrary IDs.
+DataGrid filtering is enabled by default. Extend this scaffold with the visual-interactivity skill's [filter-aware grid totals](../../visual-interactivity/references/filter-aware-grid-totals.md) pattern so local grid filters update the provided total without removing body rows needed for client-side filtering.
 
 `_ResultLimit` adds one slot only when the grand-total row exists. `TOPN` ranks that row first internally so it survives the limit while returning no more than `_MaxBodyRows` body rows. Because `TOPN` does not guarantee output order, the final `ORDER BY` makes body-row order deterministic for testing and debugging; DataGrid still owns user-facing sorting. Include every body dimension after the metric in both sort lists to break ties deterministically.
 
-When present, the row where `IsGrandTotal` is `TRUE` contains all grand-total column values. Each expression is evaluated again without the body grouping context; DAX does not add the body-row results. For example, the grand-total `Customer Count` is a distinct count across the locally selected regions rather than a sum of their per-region distinct counts. If every grand-total expression evaluates to `BLANK` under the current filters, `SUMMARIZECOLUMNS` omits the row.
+When present, the row where `IsGrandTotal` is `TRUE` contains all grand-total column values. Each expression is evaluated again without the body grouping context; DAX does not add the body-row results. For example, the grand-total `Customer Count` is a distinct count across the regions in the current filter scope rather than a sum of their per-region distinct counts. If every grand-total expression evaluates to `BLANK` under the current filters, `SUMMARIZECOLUMNS` omits the row.
 
 Copy the semantic model's format strings into the query factory's `columnMetadata`. Do not add metadata for the rollup flag because `toRollupDataTables()` removes it:
 
@@ -113,52 +108,21 @@ const columnMetadata: ColumnMetadataMap = {
 };
 ```
 
-Test the query with `npx rayfin connector invoke --name <connector> --operation executeQuery --file <payload>.query.json`, as `AGENTS.md` describes. Verify that the flag values are booleans, and copy the exact returned rollup flag name into the conversion options rather than assuming its serialized form.
+Test the query with `npx fabric-app-semantic-model-tools run-dax-query --dax <file> --alias <name>`. Verify that the flag values are booleans, and copy the exact returned rollup flag name into the conversion options rather than assuming its serialized form.
 
 ## Rendering in DataGrid
 
-DataGrid filtering is enabled by default. Derive the rollup query from grid filter state so the body and grand-total rows are evaluated under the same filters:
-
-```tsx
-import type { CellValue } from "@microsoft/fabric-datagrid";
-import { toRollupDataTables } from "@/lib/to-data-table";
-
-const [gridFilters, setGridFilters] = useState<Record<string, CellValue[]>>({});
-const { connection, query, columnMetadata } = revenueByRegion({ filters: gridFilters });
-const result = useSemanticModelQuery({ connection, query });
-
-if (result.error) return <ErrorMessage message={result.error.message} />;
-if (!result.data && result.isLoading) return <LoadingSpinner />;
-if (result.data?.status === "error") {
-  return <ErrorMessage message={result.data.error.message} />;
-}
-if (result.data?.status !== "success") return null;
-
-const { bodyTable, grandTotalTable } = toRollupDataTables(
-  result.data.table,
-  columnMetadata,
-  { rollupFlagColumns: ["[IsGrandTotal]"] },
-);
-
-<DataGrid
-  data={bodyTable}
-  grandTotals={{ position: "bottom", data: grandTotalTable }}
-  onFilterChange={(columnId, selectedValues) =>
-    setGridFilters((current) => ({ ...current, [columnId]: selectedValues }))
-  }
-  theme={theme}
-/>
-```
+DataGrid filtering is enabled by default. Follow the visual-interactivity skill's [component wiring](../../visual-interactivity/references/filter-aware-grid-totals.md#component-wiring) to derive the rollup query from grid filter state, split its result with `toRollupDataTables()`, and connect `onFilterChange`.
 
 `toRollupDataTables()` treats rows where all configured rollup flags are `FALSE` as body rows and rows where all flags are `TRUE` as the provided grand total. It rejects multiple grand-total rows and intermediate subtotal rows until DataGrid has an explicit subtotal API. The array-based flag contract leaves room to classify additional rollup levels when that support is added.
 
-Changing `gridFilters` re-executes the combined query, but the hook retains the previous result during the request so DataGrid can keep filtering the complete body table locally. The new response replaces the provided grand total. Always pass `grandTotalTable` through `grandTotals.data` so DataGrid treats it as authoritative; omitting `data` selects client-computed mode. Conversion failures are query-authoring errors and intentionally surface for malformed totals.
+Always pass `grandTotalTable` through `grandTotals.data` so DataGrid treats it as authoritative; omitting `data` selects client-computed mode. Conversion failures are query-authoring errors and intentionally surface for malformed totals.
 
 DataGrid owns grand-total rendering; do not append the total to body rows or use `cellRenderer` for it.
 
 ## Independent query organization and wiring
 
-Use separate queries when a consumer needs independently shaped result tables rather than classified rows from one shared result. Give each result its own `.dax` file and factory output (`connection`, `query`, and `columnMetadata`), and keep the shared Vega-Lite spec with the visualization factory. Follow the template's [Query & Spec Organization](../../../../AGENTS.md#query--spec-organization) conventions for file names, variants, and barrel exports.
+Use separate queries when a consumer needs independently shaped result tables rather than classified rows from one shared result. Give each result its own `.dax` file and factory output (`connection`, `query`, and `columnMetadata`), and keep the shared Vega-Lite spec with the visualization factory. Follow the template's [Query and spec organization](../../../../AGENTS.md#query-and-spec-organization) conventions for file names, variants, and barrel exports.
 
 Call each factory with the same shared inputs, then execute each returned query with its own hook call:
 
@@ -195,7 +159,7 @@ const summaryTable = toDataTable(summary.data.table, summaryConfig.columnMetadat
 />
 ```
 
-See the visuals skill's [multi-data input](../../visuals/references/multi-data-input.md) reference for named dataset binding, overlays, reference lines, axis spines, and compatible field contracts. For a baseline plus selected-subset overlay, follow [Highlight queries](highlight-queries.md) for query generation and synchronization.
+See the visuals skill's [multi-data input](../../visuals/references/multi-data-input.md) reference for named dataset binding, overlays, reference lines, axis spines, and compatible field contracts. For a baseline plus selected-subset overlay, follow the visual-interactivity skill's [Highlight queries](../../visual-interactivity/references/highlight-queries.md) for query generation and synchronization.
 
 ## Consistency rules
 
@@ -205,4 +169,4 @@ See the visuals skill's [multi-data input](../../visuals/references/multi-data-i
 - Keep output aliases and metadata names aligned; the body and grand-total `DataTable`s use the same format metadata.
 - Validate that the query never returns multiple flagged grand-total rows.
 - Pass the same model connection and shared filter parameters to every related query factory so tables do not drift.
-- Keep shared field aliases, types, and encoded keys compatible across independently queried tables. Cross-highlight baseline and subset queries must also share grouping columns, measures, and row keys as described in [Highlight queries](highlight-queries.md).
+- Keep shared field aliases, types, and encoded keys compatible across independently queried tables. Cross-highlight baseline and subset queries must also share grouping columns, measures, and row keys as described in [Highlight queries](../../visual-interactivity/references/highlight-queries.md).

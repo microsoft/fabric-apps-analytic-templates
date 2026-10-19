@@ -11,7 +11,7 @@ import { twMerge } from "tailwind-merge";
 /**
  * Merge Tailwind CSS class names with conflict resolution.
  *
- *   cn("px-2 py-1", isActive && "bg-primary text-primary-foreground")
+ *   cn("px-2 py-1", isActive && "bg-brand text-on-brand")
  */
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));

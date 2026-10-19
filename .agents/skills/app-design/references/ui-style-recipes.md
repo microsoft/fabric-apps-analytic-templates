@@ -24,7 +24,7 @@ All form and input elements must have focus, disabled, and error/invalid states.
 ### Dark mode
 
 - Use the `.dark` class variant via `@custom-variant dark (&:is(.dark *))`.
-- Opacity adjustments for dark mode are common: `dark:bg-input/30`, `dark:hover:bg-input/50`.
+- Opacity adjustments for dark mode are common: `dark:bg-border/30`, `dark:hover:bg-border/50`.
 
 ### `cn()` for class merging
 
@@ -131,33 +131,35 @@ Any cluster of related interactive elements — form fields, filter panels, tool
 
 ### Cards
 
-- **Background**: `bg-card text-card-foreground`
+- **Background**: `bg-card`
+- **KPI values**: `text-emphasis-foreground`
 - **Elevation**: choose shadow, border, or both to separate cards from the page. `shadow-container-4` + `border` is the baseline default; shadow-only, border-only, or borderless designs are all valid depending on the aesthetic direction.
 - **Internal spacing**: use `px-*` / `py-*` on content areas, `gap-*` between sections
 - **Structure**: compose from header, content, footer sections — don't enforce rigid slots
 - **Visuals**: `VegaVisual` and `DataGrid` draw their own card — pass these classes to `containerClassName` instead of wrapping them.
+- **Visual layout**: put grid spans, flex placement, margins, and whole-frame sizing on `containerRootClassName`, not `containerClassName`.
 
 ### Inputs
 
 - **Height**: align with the app's density — `h-9` standard, `h-8` compact
 - **Background**: adapt to the aesthetic — `bg-transparent`, tinted, or filled are all valid
-- **Border**: `border border-input` is the baseline; borderless with an underline, inset shadow, or filled background are alternatives
+- **Border**: `border border-border` is the baseline; borderless with an underline, inset shadow, or filled background are alternatives
 - **Placeholder**: `placeholder:text-muted-foreground`
-- **Selection highlight**: `selection:bg-primary selection:text-primary-foreground`
+- **Selection highlight**: `selection:bg-brand selection:text-on-brand`
 
 ### Checkboxes, Radios & Switches
 
 These are often left unstyled — don't. They should match the aesthetic direction like any other element.
 
-- **Checkboxes / Radios**: style the indicator to match the app's radius, colors, and weight. Use `bg-primary` for the checked state with a crisp check/dot icon. Size them proportionally to the adjacent label text.
+- **Checkboxes / Radios**: style the indicator to match the app's radius, colors, and weight. Use `bg-brand` for the checked state with a crisp check/dot icon. Size them proportionally to the adjacent label text.
 - **Switches / Toggles**: match the track and thumb to the app's color palette. The track should clearly communicate on/off states.
 - **Focus**: all variants need visible focus rings consistent with other interactive elements.
 
 ### Dropdowns / Selects / Menus
 
-- **Surface**: `bg-popover text-popover-foreground`
+- **Surface**: `bg-card text-foreground`
 - **Shadow**: `shadow-md`
-- **Item focus**: `focus:bg-accent focus:text-accent-foreground`
+- **Item focus**: `focus:bg-accent focus:text-foreground`
 - **Item spacing**: typically `py-1.5 px-2`
 - **Item typography**: `text-300`
 - **Max height**: respect Radix's available-height variable for viewport-aware sizing

@@ -1,4 +1,4 @@
-# Filter Strategy
+# Cross-Filter Strategy
 
 Interactive reports let users filter data by selecting values. Where filtering happens — in DAX or in TypeScript — is a trade-off between query cost and interaction speed.
 
@@ -58,7 +58,7 @@ EVALUATE
 ORDER BY 'Product'[Category]
 ```
 
-The query is lighter (computes for one date only), but each filter change requires a server round-trip.
+The query is lighter (computes for one date only), but each filter change requires a server round-trip. Use a typed [query factory](query-factories.md) to apply the selected value safely.
 
 ## Choosing the Right Approach
 

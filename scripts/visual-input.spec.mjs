@@ -14,6 +14,7 @@ import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { acquireRayfinCliLock, withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
 import { createServer } from 'vite';
 
 import { toDataTable } from '../src/lib/to-data-table.ts';
@@ -33,6 +34,11 @@ vi.mock('node:child_process', async () => {
     return { execFile: Object.assign(vi.fn(), { [promisify.custom]: execFileAsync }) };
 });
 vi.mock('vite', () => ({ createServer: vi.fn() }));
+// The real Rayfin CLI lock, observed: every CLI run must hold it.
+vi.mock('@microsoft/fabric-app-semantic-model-tools/connector', async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, withRayfinCliLock: vi.fn(actual.withRayfinCliLock) };
+});
 
 const queryTable = {
     columns: [{ name: '[Value]', dataType: 'number' }],
@@ -339,6 +345,29 @@ describe('visual input loader', () => {
         }
     });
 
+    it('runs the Rayfin CLI only while it holds the Rayfin CLI lock', async () => {
+        const configRoot = await mkdtemp(resolve(tmpdir(), 'visual-input-lock-'));
+        const previous = process.env.RAYFIN_CONFIG_DIR;
+        process.env.RAYFIN_CONFIG_DIR = resolve(configRoot, 'rayfin');
+        mockServer();
+        const loader = await createVisualInputLoader(await mkdtemp(resolve(tmpdir(), 'visual-input-')));
+        try {
+            // Another Rayfin CLI command holds the lock: the visual's query must wait for it.
+            const release = await acquireRayfinCliLock();
+            const pending = loader.load({ factoryPath: 'src/queries/revenue.ts' });
+            await new Promise((resolveWait) => setTimeout(resolveWait, 300));
+            expect(execFileAsync).not.toHaveBeenCalled();
+            release();
+            await expect(pending).resolves.toMatchObject({ queryTable });
+            expect(execFileAsync).toHaveBeenCalledTimes(1);
+            expect(withRayfinCliLock).toHaveBeenCalledTimes(1);
+        } finally {
+            await loader.close();
+            if (previous === undefined) delete process.env.RAYFIN_CONFIG_DIR;
+            else process.env.RAYFIN_CONFIG_DIR = previous;
+            await rm(configRoot, { recursive: true, force: true });
+        }
+    });
     it('rejects paths outside the app and invalid definitions without executing a query', async () => {
         const server = mockServer({ makeVisual: () => ({ query: 'incomplete' }) });
         const projectRoot = resolve('test-app');

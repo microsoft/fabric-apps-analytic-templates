@@ -4,11 +4,9 @@ description: >
   Use when user wants to incorporate charts, graphs, data grid, 
   or other visual representations of data into their project.
   Use VegaVisual and DataGrid components to create these visuals, 
-  utilizing the shared DataTable input, formatting, theme, and interactivity.
+  utilizing the shared DataTable input, formatting, and theme.
   Covers the VisualContainer chrome every visual gets by default,
-  the onInteraction selection/click events host apps consume, named
-  multi-table data input for layered overlays and reference lines, and
-  Vega-Lite native selections.
+  plus named multi-table data input for layered overlays and reference lines.
 ---
 
 # Visuals
@@ -83,6 +81,7 @@ For the `DataTable` schema and `ColumnDef` fields, see [references/data-table.md
 Anything the default container doesn't cover — custom actions, programmatic capture, the same chrome around a non-visual etc: [references/visual-container.md](references/visual-container.md).
 
 ## Formatting & Theme
+- **Encoding semantics**: Choose encoding types by field meaning, not storage type. Use `ordinal` for integer years shown as ordered categories, `nominal` for identifiers, `quantitative` for measured quantities, and `temporal` for actual date/time values. See [Encoding Type Selection](references/vega-lite-visual.md#encoding-type-selection) for examples and continuous-time guidance.
 - **Formatting rules**: Number formatting, color palettes, chart-specific encoding rules, highlighting guidelines, and a default theme. See [references/formatting.md](references/formatting.md).
 
 ## Custom visuals
@@ -90,31 +89,4 @@ Always use the above mentioned ways to create visual when possible. If the user'
 
 ## Interactivity
 
-Both `VegaVisual` and `DataGrid` expose an `onInteraction` prop that emits structured, predicate-based events when the user clicks a data point or row.
-
-**Always use the `onInteraction` prop** on `VegaVisual` and `DataGrid` to surface user selections. The component only emits the selection; the host app decides what it does — e.g. coordinating other visuals or queries on the page.
-
-> A visual renders a layered subset by binding two named datasets to two layers (`data={{ all, highlighted }}`) — see [references/multi-data-input.md](references/multi-data-input.md). The component renders whatever tables it is handed.
-
-```tsx
-import type { InteractionEvent } from "@microsoft/fabric-visuals-core";
-
-function handleInteraction(source: string, events: InteractionEvent[]) {
-    for (const event of events) {
-        if (event.action === "select") {
-            // event.selections describes the clicked data as predicates
-        } else if (event.action === "clear") {
-            // user deselected (re-clicked same item or clicked empty space)
-        }
-    }
-}
-
-<VegaVisual spec={spec} data={dataTable} theme={theme}
-    onInteraction={(events) => handleInteraction("salesChart", events)} />
-<DataGrid data={dataTable} theme={theme}
-    onInteraction={(events) => handleInteraction("detailTable", events)} />
-```
-**Key concepts**:
-- Clicking a different data point emits a new `select` (replaces the prior selection — no preceding `clear`).
-- Re-clicking the same item or background space in a vega-lite visual emits `clear`.
-- Predicates include all fields from the datum; consumers filter to the ones that are relevant to them.
+**Always use the `onInteraction` prop** on `VegaVisual` and `DataGrid` to surface user selections. Follow the [visual-interactivity](../visual-interactivity/SKILL.md) skill for event handling, native Vega-Lite selections, coordinated filtering and highlighting, filter-aware grid totals, and parameterized query factories.

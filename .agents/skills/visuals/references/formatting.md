@@ -10,7 +10,7 @@ Formats defined in `columnMetadata` are auto-applied by `VegaVisual` to axes, le
 
 - Use `"#,0"` for general scalar numbers (e.g., counts).
 - Use `"$#,0.00"` for currency values.
-- **Exception**: Numbers representing time or dates (e.g., a year) should not be formatted.
+- **Exception**: Numbers representing time or dates (e.g., a year) should not be formatted. Choose the encoding by meaning: integer years shown as ordered categories use `ordinal`, not `quantitative`. A format string does not prevent quantitative axis compaction such as `2000` becoming `2K`. See [Encoding Type Selection](vega-lite-visual.md#encoding-type-selection), including when to use a continuous temporal axis.
 
 ## Colors
 
