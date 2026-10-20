@@ -2,13 +2,13 @@
 
 A cross-highlight overlay layers a bright "selected subset" on a dimmed baseline. The subset comes from a fresh DAX query scoped by the selection — not from filtering the baseline result client-side.
 
-For how the spec binds the two tables to two layers, see the visuals skill's [multi-data input](../../visuals/references/multi-data-input.md) reference. This page covers producing the subset table.
+For general named dataset binding, see the visuals skill's [multi-data input](../../visuals/references/multi-data-input.md) reference. This page covers producing and rendering the subset table.
 
 ## When you need this
 
 A chart layers two datasets at the same axis grain (dimmed baseline + bright subset), and the bright layer reflects a selection made elsewhere on the page.
 
-If the selection column is one of the chart's own encoding fields and you only need to dim non-matching rows, use Vega-Lite native selection in the spec — no query needed.
+If the selection column is one of the chart's own encoding fields and you only need to dim non-matching rows, use [native selections](native-selections.md) in the spec — no query needed.
 
 ## Re-aggregate, don't filter
 
@@ -85,6 +85,31 @@ Assemble the query string in TypeScript and pass it to `useSemanticModelQuery`. 
 
 The host component holds the selection (from another visual's `onInteraction`), fetches the aligned subset, and swaps the second named dataset on each change. Pass `{ all }` alone when there's no selection, `{ all, highlighted }` once a subset is fetched.
 
+Both layers encode the same fields. The bright layer renders only at axis keys supplied by the highlighted table:
+
+```json
+{
+    "layer": [
+        {
+            "data": { "name": "all" },
+            "mark": { "type": "bar", "opacity": 0.3 },
+            "encoding": {
+                "x": { "field": "Category" },
+                "y": { "field": "Sales", "type": "quantitative" }
+            }
+        },
+        {
+            "data": { "name": "highlighted" },
+            "mark": "bar",
+            "encoding": {
+                "x": { "field": "Category" },
+                "y": { "field": "Sales", "type": "quantitative" }
+            }
+        }
+    ]
+}
+```
+
 ```tsx
 function SalesByCategoryChart({ selections }: { selections: DataPointSelection[] | null }) {
   const { theme } = useThemeContext();
@@ -101,7 +126,7 @@ function SalesByCategoryChart({ selections }: { selections: DataPointSelection[]
 }
 ```
 
-`useHighlightedTable` builds the scoped query from the selection's predicates (above) and runs it through `useSemanticModelQuery` — it does **not** filter `all` client-side. See the visuals [multi-data input](../../visuals/references/multi-data-input.md) reference for how the spec layers `all` and `highlighted`.
+`useHighlightedTable` builds the scoped query from the selection's predicates (above) and runs it through `useSemanticModelQuery` — it does **not** filter `all` client-side.
 
 ## Keep baseline and subset in sync
 

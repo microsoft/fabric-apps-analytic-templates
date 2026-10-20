@@ -19,6 +19,31 @@ The container's built-in actions can be on or off by default. Use `visualContain
 
 Full set: `VisualContainerCapabilities` under *Visual Container Framing* in `node_modules/@microsoft/fabric-visuals-core/README.md`.
 
+## Layout and card styling
+
+Use `containerRootClassName` for grid spans, flex placement, margins, and whole-frame sizing. Use `containerClassName` for the **inner card surface**: background, border, radius, and padding. A renderer's own `className` still styles the visual inside the card.
+
+```tsx
+<section className="grid gap-grid lg:grid-cols-3">
+    <VegaVisual
+        spec={vegaLiteSpec}
+        data={dataTable}
+        theme={theme}
+        header={{ title: "Sales momentum" }}
+        containerRootClassName="h-96 lg:col-span-2"
+        containerClassName="rounded-xl border bg-card p-4"
+    />
+    <DataGrid
+        data={summaryTable}
+        theme={theme}
+        header={{ title: "Summary" }}
+        containerRootClassName="h-96"
+    />
+</section>
+```
+
+No layout wrapper is needed for these self-framing React components. Give virtualized grids a definite height; `min-h-*` alone is not a viewport constraint. Both framing class props are ignored when `chromeless` removes the frame or a hand-authored `VisualContainer` owns it.
+
 ## Wrapping a visual yourself
 
 Hand-author a container only when the default path doesn't cover what you need:
@@ -54,7 +79,8 @@ Move the chrome up to the container and pass `chromeless` on the visual inside. 
 | `builtInActionIds` | `BuiltInActionId[]` | Built-in actions by id — `"copyVisual"` is the Copy button. Rendered ahead of custom actions. |
 | `customActions` | `VisualContainerAction[]` | Your own buttons, rendered after the built-ins. |
 | `maxVisibleButtons` | `number` | Buttons beyond this collapse into a `…` overflow menu. Defaults to `2`. |
-| `className` | `string` | Merged onto the container root, not replacing its own class. On a self-framing `VegaVisual` / `DataGrid`, the equivalent prop is `containerClassName`. |
+| `rootClassName` | `string` | Merged onto the outermost element for placement and whole-container sizing. On a self-framing `VegaVisual` / `DataGrid`, use `containerRootClassName`. |
+| `className` | `string` | Merged onto the inner card surface for background, border, radius, and padding, not outer layout. On a self-framing `VegaVisual` / `DataGrid`, use `containerClassName`. |
 
 Keep `copyVisual` in `builtInActionIds` — a hand-authored container is still expected to be copyable. Don't rebuild Copy as a custom action.
 

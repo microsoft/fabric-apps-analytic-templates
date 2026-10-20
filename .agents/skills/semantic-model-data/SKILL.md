@@ -63,7 +63,7 @@ it, treat a result with exactly `resultSetRowCountLimit` rows as possibly
 incomplete.
 
 `useSemanticModelQuery` does not forward the field, so from app code shape the
-DAX itself. The CLI's `invoke` accepts it in the payload file.
+DAX itself.
 
 ### Result Handling
 
