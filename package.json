@@ -19,7 +19,7 @@
     "validate:visual": "node scripts/validate-visual.mjs"
   },
   "dependencies": {
-    "@microsoft/fabric-datagrid": "4.3.0",
+    "@microsoft/fabric-datagrid": "4.3.1",
     "@microsoft/fabric-visuals": "4.4.0",
     "@microsoft/fabric-visuals-core": "4.4.0",
     "@microsoft/fabric-visuals-extensibility": "4.4.0",
