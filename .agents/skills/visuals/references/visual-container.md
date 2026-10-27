@@ -61,7 +61,7 @@ Move the chrome up to the container and pass `chromeless` on the visual inside. 
 ```tsx
 <VisualContainer
     header={{ title: "Revenue by Region", subtitle: "Last 12 months" }}
-    builtInActionIds={["copyVisual"]}
+    builtInActions={{ copyVisual: {} }}
     customActions={[containerAction]}
 >
     <VegaVisual
@@ -76,13 +76,20 @@ Move the chrome up to the container and pass `chromeless` on the visual inside. 
 | Prop | Type | Notes |
 |---|---|---|
 | `header` | `{ title, subtitle? }` or a React node | Optional. With a header the toolbar sits in the header row; without one it floats over the visual. |
-| `builtInActionIds` | `BuiltInActionId[]` | Built-in actions by id — `"copyVisual"` is the Copy button. Rendered ahead of custom actions. |
+| `builtInActions` | `BuiltInActions` | Built-in actions by optional keyed configuration — `copyVisual` uses `CopyActionContext` (`{}`); `viewAsTable` uses `ShowAsTableActionContext` (`{ tableSource: provider }`). Rendered in order ahead of custom actions. |
 | `customActions` | `VisualContainerAction[]` | Your own buttons, rendered after the built-ins. |
 | `maxVisibleButtons` | `number` | Buttons beyond this collapse into a `…` overflow menu. Defaults to `2`. |
 | `rootClassName` | `string` | Merged onto the outermost element for placement and whole-container sizing. On a self-framing `VegaVisual` / `DataGrid`, use `containerRootClassName`. |
 | `className` | `string` | Merged onto the inner card surface for background, border, radius, and padding, not outer layout. On a self-framing `VegaVisual` / `DataGrid`, use `containerClassName`. |
 
-Keep `copyVisual` in `builtInActionIds` — a hand-authored container is still expected to be copyable. Don't rebuild Copy as a custom action.
+Keep `copyVisual` in `builtInActions` — a hand-authored container is still expected to be copyable. Don't rebuild Copy as a custom action.
+
+For Show as a table, supply a provider returning `VisualTable[]` or `null` (or a promise of either) in
+the `"viewAsTable"` context. A hand-authored container must supply the provider
+explicitly; a self-framing `VegaVisual` does so automatically. Omit a property
+(or set it to `undefined`) to disable its action. Replace the configuration object
+to change actions or contexts rather than mutating it in place. A `null` result
+shows the empty state; provider failures still show the error state.
 
 ## Custom actions
 
@@ -105,7 +112,7 @@ const ref = useRef<VisualContainerHandle>(null);
 const blob = await ref.current?.captureAsImage();   // PNG Blob
 await ref.current?.copyImageToClipboard();          // capture + clipboard, no toast
 
-<VisualContainer ref={ref} header={{ title: "Revenue" }} builtInActionIds={["copyVisual"]}>
+<VisualContainer ref={ref} header={{ title: "Revenue" }} builtInActions={{ copyVisual: {} }}>
     <VegaVisual spec={spec} data={dataTable} theme={theme} chromeless />
 </VisualContainer>
 ```
