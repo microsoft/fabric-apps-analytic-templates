@@ -17,6 +17,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createVisualInputLoader } from './visual-input.mjs';
 import { main, renderVisual, runValidationBatch } from './validate-visual.mjs';
 
+vi.mock('@microsoft/fabric-visuals/headless', { spy: true });
+
 vi.mock('./visual-input.mjs', async (importOriginal) => ({
     ...await importOriginal(),
     createVisualInputLoader: vi.fn(),
