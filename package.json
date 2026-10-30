@@ -23,14 +23,14 @@
     "@microsoft/fabric-visuals": "5.0.0",
     "@microsoft/fabric-visuals-core": "5.0.0",
     "@microsoft/fabric-visuals-extensibility": "5.0.0",
-    "@microsoft/rayfin-auth-provider-fabric": "^1.36.1",
-    "@microsoft/rayfin-client": "^1.36.1",
-    "@microsoft/rayfin-connector-fabric-semanticmodel": "^1.36.1",
-    "@microsoft/rayfin-connectors": "^1.36.1",
-    "@microsoft/rayfin-core": "^1.36.1",
-    "@microsoft/rayfin-data": "^1.36.1",
-    "@microsoft/rayfin-functions": "^1.36.1",
-    "@microsoft/rayfin-lib": "^1.36.1",
+    "@microsoft/rayfin-auth-provider-fabric": "^1.37.0-alpha",
+    "@microsoft/rayfin-client": "^1.37.0-alpha",
+    "@microsoft/rayfin-connector-fabric-semanticmodel": "^1.37.0-alpha",
+    "@microsoft/rayfin-connectors": "^1.37.0-alpha",
+    "@microsoft/rayfin-core": "^1.37.0-alpha",
+    "@microsoft/rayfin-data": "^1.37.0-alpha",
+    "@microsoft/rayfin-functions": "^1.37.0-alpha",
+    "@microsoft/rayfin-lib": "^1.37.0-alpha",
     "@tailwindcss/vite": "^4.3.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
@@ -44,8 +44,8 @@
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@microsoft/fabric-app-semantic-model-tools": "1.0.0",
-    "@microsoft/rayfin-cli": "^1.36.1",
-    "@microsoft/rayfin-mcp": "^1.36.1",
+    "@microsoft/rayfin-cli": "^1.37.0-alpha",
+    "@microsoft/rayfin-mcp": "^1.37.0-alpha",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.17",
@@ -57,9 +57,14 @@
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
     "rollup-plugin-license": "^3.7.1",
-    "typescript": "~5.7.2",
+    "typescript": "~5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^8.3.4",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "@microsoft/fabric-app-semantic-model-tools": {
+      "@microsoft/rayfin-cli": "$@microsoft/rayfin-cli"
+    }
   }
 }
