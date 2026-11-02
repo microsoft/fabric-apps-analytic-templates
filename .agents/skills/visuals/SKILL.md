@@ -1,9 +1,9 @@
 ---
 name: visuals
 description: >
-  Use when user wants to incorporate charts, graphs, data grid, 
+  Use when user wants to incorporate charts, graphs, KPI cards, data grid,
   or other visual representations of data into their project.
-  Use VegaVisual and DataGrid components to create these visuals, 
+  Use VegaVisual, KpiCard, and DataGrid components to create these visuals,
   utilizing the shared DataTable input, formatting, and theme.
   Covers the VisualContainer chrome every visual gets by default,
   plus named multi-table data input for layered overlays and reference lines.
@@ -12,9 +12,10 @@ description: >
 # Visuals
 
 ## Types of visuals
-There are 2 different types of visuals that can be used in a project:
+There are 3 different types of visuals that can be used in a project:
 1. Charts and Graphs: These are used to represent data in a visual format, such as bar charts, line charts, pie charts, etc. These are built using vega-lite, see [references/vega-lite-visual.md](references/vega-lite-visual.md) for more details.
 2. Data Grids: These are used to display tabular data in a structured format, allowing for sorting, filtering, and pagination. See [references/data-grid-visual.md](references/data-grid-visual.md) for more details.
+3. KPI cards: Callout metrics with optional chart and reference regions. Follow [references/kpi-card-visual.md](references/kpi-card-visual.md) for component selection, data contracts, validation, and rendering.
 
 ## Packages & Imports
 
@@ -22,7 +23,7 @@ The visual components are provided by three packages. **Always use these package
 
 | Package | Primary exports | Example import |
 |---|---|---|
-| `@microsoft/fabric-visuals` | `VegaVisual`, types: `VisualizationSpec`, `VegaLiteConfig`, `VegaVisualProps` | `import { VegaVisual } from "@microsoft/fabric-visuals"` |
+| `@microsoft/fabric-visuals` | `VegaVisual`, `KpiCard`, types: `VisualizationSpec`, `VegaLiteConfig`, `VegaVisualProps`, `KpiCardProps` | `import { VegaVisual } from "@microsoft/fabric-visuals"` |
 | `@microsoft/fabric-datagrid` | `DataGrid`, types: `GridColumnDef`, `Row`, `CellValue`, `DataGridProps`, `DataGridTheme`, `SortConfig` | `import { DataGrid } from "@microsoft/fabric-datagrid"` |
 | `@microsoft/fabric-visuals-core` | `isDataTable`, `convertDataTableToRows`, design tokens | `import { isDataTable } from "@microsoft/fabric-visuals-core"` |
 
@@ -65,7 +66,7 @@ For the `DataTable` schema and `ColumnDef` fields, see [references/data-table.md
 
 ## VisualContainer defaults for every visual
 
-`VegaVisual` and `DataGrid` wrap **themselves** in a `VisualContainer` by default. The container draws the chrome — border, padding, header (title/subtitle) — plus its built-in actions, all enabled by default. Do not add a wrapper of your own unless absolutely required.
+`VegaVisual`, `DataGrid`, and `KpiCard` wrap **themselves** in a `VisualContainer` by default. The container draws the chrome — border, padding, header (title/subtitle) — plus its built-in actions. Copy is enabled by default; Show as a table is available for supported renderers with a table provider. Do not add a wrapper of your own unless absolutely required.
 
 ```tsx
 <VegaVisual
@@ -76,6 +77,8 @@ For the `DataTable` schema and `ColumnDef` fields, see [references/data-table.md
 />
 
 <DataGrid data={dataTable} theme={theme} header={{ title: "Top Products" }} />
+
+<KpiCard callout={callout} theme={theme} header={{ title: "Revenue" }} />
 ```
 
 Anything the default container doesn't cover — custom actions, programmatic capture, the same chrome around a non-visual etc: [references/visual-container.md](references/visual-container.md).

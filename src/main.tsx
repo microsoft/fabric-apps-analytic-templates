@@ -5,7 +5,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import { createRoot } from 'react-dom/client';
+import type { ReactElement } from 'react';
+import { createRoot, type Root as ReactRoot } from 'react-dom/client';
 import { ErrorBoundary } from "react-error-boundary";
 import { useCssTheme } from "@microsoft/fabric-visuals";
 
@@ -14,14 +15,15 @@ import { ErrorFallback } from './ErrorFallback';
 import { useAppTheme } from './hooks/use-theme';
 import { ThemeContext } from './hooks/theme.context';
 import { AuthProvider } from './hooks/use-auth';
-import { bootstrapAuth } from './services/rayfin-auth.service';
+import { bootstrapAuth, type IAuthService } from './services/rayfin-auth.service';
+import { bootstrapLanguage } from './services/language.service';
 import { AuthGate } from './components/auth-gate.component';
 
 import "./global.css"
 
-const rayfinAuthService = bootstrapAuth();
+const rayfinAuthService: IAuthService = bootstrapAuth();
 
-function Root() {
+function Root(): ReactElement {
     const { isDark, toggleTheme } = useAppTheme();
     const theme = useCssTheme();
 
@@ -38,4 +40,11 @@ function Root() {
     );
 }
 
-createRoot(document.getElementById('root')!).render(<Root />)
+const root: ReactRoot = createRoot(document.getElementById('root')!);
+
+root.render(<Root />);
+
+void bootstrapLanguage().then(() => {
+    // Reconcile the existing tree with the loaded strings; do not remount auth or app state.
+    root.render(<Root />);
+});

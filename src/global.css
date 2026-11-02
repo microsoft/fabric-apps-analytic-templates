@@ -17,10 +17,17 @@
   --font-visual-subtitle: var(--font-base);
   --font-data-label: var(--font-base);
   --text-page-title: var(--text-600);
+  --text-page-title--font-weight: var(--font-weight-semibold);
   --text-page-subtitle: var(--text-300);
+  --text-page-subtitle--font-weight: var(--font-weight-regular);
   --text-visual-title: var(--text-400);
+  --text-visual-title--font-weight: var(--font-weight-semibold);
   --text-visual-subtitle: var(--text-300);
+  --text-visual-subtitle--font-weight: var(--font-weight-regular);
   --text-data-label: 11px;
+  --text-data-label--font-weight: var(--font-weight-regular);
+  --text-kpi-value: var(--text-600);
+  --text-kpi-value--font-weight: var(--font-weight-bold);
 }
 
 @theme {

@@ -17,12 +17,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createVisualInputLoader } from './visual-input.mjs';
 import { main, renderVisual, runValidationBatch } from './validate-visual.mjs';
 
-vi.mock('@microsoft/fabric-visuals/headless', { spy: true });
-
 vi.mock('./visual-input.mjs', async (importOriginal) => ({
     ...await importOriginal(),
     createVisualInputLoader: vi.fn(),
 }));
+
+// ESM module namespaces are not configurable, so vi.spyOn cannot replace an export. Mock the
+// module instead, delegating to the real renderer unless a test overrides one call.
+vi.mock('@microsoft/fabric-visuals/headless', async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, renderVisualToSvg: vi.fn(actual.renderVisualToSvg) };
+});
 
 const execFileAsync = promisify(execFile);
 const initialExitCode = process.exitCode;
@@ -120,7 +125,7 @@ describe('visual validation', () => {
     });
 
     it('formats error diagnostics before applying the zero-mark rule', async () => {
-        vi.spyOn(headless, 'renderVisualToSvg').mockResolvedValueOnce({
+        vi.mocked(headless.renderVisualToSvg).mockResolvedValueOnce({
             diagnostics: [
                 { severity: 'warning', source: 'vega-lite', message: 'Warning only' },
                 { severity: 'error', source: 'vega-lite', message: 'Invalid encoding' },

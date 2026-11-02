@@ -37,14 +37,6 @@ When choosing custom colors for data series, ensure adjacent colors remain easil
 
 - Set `legend: null` on each field-based encoding that would produce a legend (usually `color`), unless the user explicitly requests one.
 
-### Single Value (Card)
-
-- Show the value with the label below, like a card visual with no embellishments.
-- Use two layers:
-  - First layer: shows the value, mark uses style `"labelCallout"`.
-  - Second layer: shows the label, uses style `"labelSubtitle"`.
-- Both layers must set `limit` on the mark to `{"expr": "width"}` so text truncates with an ellipsis (`…`) when the container is too narrow.
-
 ### Line Chart
 
 - By default, just emitting a `line` encoding is sufficient.  Only if the user requests "markers" for their line charts should both `line` and `point` encodings be emitted.
