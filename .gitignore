@@ -15,9 +15,8 @@ dist
 # Semantic model schema cache, rebuilt on demand
 .schema/
 
-# Short-lived Rayfin connector payload and result files (@microsoft/fabric-app-semantic-model-tools, scripts/visual-input.mjs)
+# Short-lived Rayfin connector payload and result files (@microsoft/fabric-app-semantic-model-tools)
 .fabric-app-semantic-model-tools-*
-.lyra-rayfin-*
 
 # Rayfin local, secret-bearing, and generated files (matches the Rayfin CLI's canonical .gitignore).
 # Connector results over 8 KB spill into rayfin/.temp/invoke-results and contain model data.

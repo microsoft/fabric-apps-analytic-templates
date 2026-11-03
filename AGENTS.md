@@ -76,6 +76,8 @@ For visualizations backed by a Fabric semantic model, follow these four steps:
 
 `connection` is the connector name declared in `rayfin/rayfin.yml`.
 
+Components inside an `InteractionManager` boundary load with `useQueryFactoryTarget` from the [visual-interactivity](.agents/skills/visual-interactivity/SKILL.md) skill instead of `useSemanticModelQuery`.
+
 When a component uses `useThemeContext()` or `useSemanticModelQuery()`, call the hook unconditionally at the top of the component before any loading or error return.
 
 Runtime rules:
@@ -84,6 +86,10 @@ Runtime rules:
 - Connector error categories are `api`, `query`, `network`, `overflow`, and `unknown`; handle the full union rather than branching on a subset.
 - Key `columnMetadata` by the query's exact raw output column name. Give each entry a bracket-free `name` alias for component fields; raw names containing `.`, `[`, or `]` can render as `undefined`.
 - Pass the resolved `theme` from `useThemeContext()` to `VegaVisual`, `DataGrid`, and `KpiCard`.
+
+## Page interactions
+
+Components on the same page interact by default, as visuals do on a Power BI report page, even when the user does not ask for interactions. When a page has more than one visual, grid, or slicer, wire them through one `InteractionManager` by following the [visual-interactivity](.agents/skills/visual-interactivity/SKILL.md) skill. Clicking a bar, slice, point, or grid row must update the other components. Do not drop source wiring or cross-highlighting to reduce implementation work.
 
 ## Project structure
 

@@ -15,7 +15,12 @@ import * as headless from '@microsoft/fabric-visuals/headless';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createVisualInputLoader } from './visual-input.mjs';
-import { main, renderVisual, runValidationBatch } from './validate-visual.mjs';
+import {
+    getVisualAuthoringDiagnostics,
+    main,
+    renderVisual,
+    runValidationBatch,
+} from './validate-visual.mjs';
 
 vi.mock('./visual-input.mjs', async (importOriginal) => ({
     ...await importOriginal(),
@@ -99,6 +104,58 @@ describe('visual validation', () => {
             markTypes: { rect: 2 },
             svg: expect.stringContaining('<svg'),
         });
+    });
+
+    it('warns when an authored pie text layer bypasses managed labels', async () => {
+        const layeredPie = {
+            layer: [
+                {
+                    mark: 'arc',
+                    encoding: {
+                        theta: { field: 'value', type: 'quantitative' },
+                        color: { field: 'category', type: 'nominal' },
+                    },
+                },
+                {
+                    mark: 'text',
+                    encoding: {
+                        theta: { field: 'value', type: 'quantitative' },
+                        text: { field: 'category', type: 'nominal' },
+                    },
+                },
+            ],
+        };
+
+        const result = await renderVisual(layeredPie, data);
+        expect(result.diagnostics).toContainEqual({
+            severity: 'warning',
+            source: 'visualAuthoring',
+            message: 'This pie/donut uses an authored text layer, so Fabric managed labels are disabled. '
+                + 'Use a unit arc spec unless custom labels are intentional.',
+        });
+    });
+
+    it('does not warn for managed arc labels or non-arc text layers', () => {
+        const unitArc = {
+            mark: 'arc',
+            encoding: {
+                theta: { field: 'value', type: 'quantitative' },
+                color: { field: 'category', type: 'nominal' },
+            },
+        };
+        const layeredBar = {
+            encoding: {
+                x: { field: 'category', type: 'nominal' },
+                y: { field: 'value', type: 'quantitative' },
+            },
+            layer: [
+                { mark: 'bar' },
+                { mark: 'text', encoding: { text: { field: 'value', type: 'quantitative' } } },
+            ],
+        };
+
+        expect(getVisualAuthoringDiagnostics(unitArc)).toEqual([]);
+        expect(getVisualAuthoringDiagnostics(layeredBar)).toEqual([]);
     });
 
     it('rejects invisible geometry and empty renders with the query row count', async () => {

@@ -105,7 +105,7 @@ Include a light/dark mode toggle in the app header or toolbar. Use the `useAppTh
 - **Theming**: Light/dark color tokens defined in `src/global.css` via CSS custom properties. Dark mode uses the `.dark` class on the root `html` element, auto-detected via `prefers-color-scheme`, `data-appearance` attribute, or `.dark` class. The `useAppTheme` hook in `src/hooks/use-theme.ts` manages the toggle.
 - **CSS class merging**: Use `cn()` from `@/lib/utils` (powered by `clsx` + `tailwind-merge`) to conditionally combine Tailwind class names.
 - **Icons**: Lucide React for UI icons.
-- **UI Components**: Use Radix primitives with Tailwind CSS styling for all interactive elements — buttons, inputs, dialogs, menus, tabs, etc.
+- **UI Components**: Prefer built-in slicers when a component supports the required app/page filtering behavior; read the `@microsoft/fabric-slicers` README for usage. Otherwise, use Radix primitives with Tailwind CSS styling, as for other interactive elements — buttons, inputs, dialogs, menus, tabs, etc.
 
 ### UI Token Rules
 
@@ -121,7 +121,7 @@ Examples:
 
 **`cn()` and tailwind-merge conflicts:** `tailwind-merge` treats `text-*` utilities as one conflict group. In `cn()`, combining text size and text color with ambiguous `text-*` classes can drop one class. Prefer explicit length syntax for font size (e.g., `text-[length:var(--text-300)]`) when combining with text color classes inside `cn()`. If classes are static and not merged, `text-300 text-foreground` is acceptable.
 
-**Spacing:** Numeric spacing utilities multiply `--spacing` (4px by default). Use `gap-grid` on dashboard card layouts. Numeric width, height, and positioning utilities also scale; use dedicated tokens such as `icon-size-200` for dimensions that must stay fixed.
+**Spacing:** Numeric spacing utilities multiply `--spacing` (4px by default). Use `gap-(--grid-gap)` on dashboard card layouts. Numeric width, height, and positioning utilities also scale; use dedicated tokens such as `icon-size-200` for dimensions that must stay fixed.
 
 **Form element font inheritance:** Native form controls may not inherit the page font family by default. Ensure base styles in `global.css` set `font-family: inherit` for `select`, `input`, `textarea`, and `button`.
 

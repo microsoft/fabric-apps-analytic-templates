@@ -7,6 +7,8 @@
 /* These tokens are consumed directly as CSS variables, so emit them
    even when no Tailwind utility references them. */
 @theme static {
+  --grid-gap: calc(var(--spacing) * 4);
+  --radius-scale: 1;
   --color-brand:            #0f6cbd;  /* branded surfaces */
   --color-brand-foreground: #0f6cbd;  /* brand-colored content on standard surfaces */
   --color-hover:            rgba(0, 0, 0, 0.04);  /* row/cell hover surface in DataGrid + visuals */
@@ -60,17 +62,17 @@
   --shadow-container-16: var(--shadow-lg);
 
   --radius-none: 0;
-  --radius-sm: calc(2px * var(--radius-scale, 1));
-  --radius-md: calc(4px * var(--radius-scale, 1));
-  --radius-lg: calc(6px * var(--radius-scale, 1));
-  --radius-xl: calc(8px * var(--radius-scale, 1));
-  --radius-2xl: calc(12px * var(--radius-scale, 1));
-  --radius-3xl: calc(16px * var(--radius-scale, 1));
-  --radius-4xl: calc(24px * var(--radius-scale, 1));
-  --radius-5xl: calc(32px * var(--radius-scale, 1));
-  --radius-6xl: calc(40px * var(--radius-scale, 1));
-  --radius-full: calc(9999px * var(--radius-scale, 1));
-  --radius: calc(6px * var(--radius-scale, 1));
+  --radius-sm: calc(2px * var(--radius-scale));
+  --radius-md: calc(4px * var(--radius-scale));
+  --radius-lg: calc(6px * var(--radius-scale));
+  --radius-xl: calc(8px * var(--radius-scale));
+  --radius-2xl: calc(12px * var(--radius-scale));
+  --radius-3xl: calc(16px * var(--radius-scale));
+  --radius-4xl: calc(24px * var(--radius-scale));
+  --radius-5xl: calc(32px * var(--radius-scale));
+  --radius-6xl: calc(40px * var(--radius-scale));
+  --radius-full: calc(9999px * var(--radius-scale));
+  --radius: calc(6px * var(--radius-scale));
 
   /* Spacing base unit
      Usage: p-*, m-*, gap-* (e.g. p-4 gap-3) */
@@ -129,10 +131,6 @@
   --icon-size-500: 28px;
   --icon-size-600: 32px;
   --icon-size-700: 48px;
-}
-
-@utility gap-grid {
-  gap: var(--grid-gap, calc(var(--spacing) * 4));
 }
 
 @utility icon-size-* {

@@ -5,22 +5,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 
-import { withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
 import { createServer } from 'vite';
 
-const execFileAsync = promisify(execFile);
-
-/**
- * Rows a validation query may return. Sent as the connector's `resultSetRowCountLimit`,
- * which truncates silently: a larger result is validated on its first rows only.
- */
-const QUERY_ROW_LIMIT = 1000;
+import { createQueryExecutor } from './semantic-model-query.mjs';
 
 /**
  * Imports query factories, executes their DAX queries, and prepares specs and data for rendering.
@@ -29,7 +18,10 @@ const QUERY_ROW_LIMIT = 1000;
  * without rendering a visual. Shares one Vite server across loads.
  * Remember to call close() after the loader is done being used.
  */
-export async function createVisualInputLoader(projectRoot = process.cwd()) {
+export async function createVisualInputLoader(
+    projectRoot = process.cwd(),
+    { executeQuery = createQueryExecutor({ cwd: projectRoot }) } = {},
+) {
     projectRoot = resolve(projectRoot);
     const server = await createServer({
         root: projectRoot,
@@ -53,7 +45,7 @@ export async function createVisualInputLoader(projectRoot = process.cwd()) {
                     factoryPath,
                     params,
                 );
-                const queryTable = await executeQuery(projectRoot, definition.connection, definition.query);
+                const queryTable = await executeQuery(definition.connection, definition.query);
                 const dataTable = dataTableModule.toDataTable(queryTable, definition.columnMetadata);
 
                 return { factoryName, definition, queryTable, dataTable };
@@ -133,180 +125,6 @@ async function loadVisualDefinition(server, projectRoot, factoryPath, params) {
     }
 
     return { definition, factoryName };
-}
-
-/**
- * Runs a DAX query against the named semantic-model connection with the Rayfin CLI.
- * The query is handed over in a temporary JSON payload file rather than on the command
- * line, because DAX and connector names originate from untrusted model and user text.
- * Rayfin rejects `--file` paths outside the project, so the short-lived payload
- * directory is created inside the app (and ignored by git) rather than in the OS temp directory.
- *
- * The CLI runs under the Rayfin CLI lock from `@microsoft/fabric-app-semantic-model-tools`:
- * Rayfin CLI calls run one at a time across processes, because two CLIs that start together can
- * lose the saved login.
- *
- * The payload caps the result at {@link QUERY_ROW_LIMIT} rows, so a visual is validated
- * against at most its first 1000 rows. The result is read back from `--output-file` rather
- * than from the JSON envelope: the CLI shrinks an inline result larger than 8 KB to a preview,
- * whereas the explicit destination always receives every returned row.
- */
-async function executeQuery(projectRoot, connection, query) {
-    // The package exposes its own package.json, so the bin script can be located without
-    // guessing at a file adjacent to the library entry point.
-    const packageJson = fileURLToPath(import.meta.resolve('@microsoft/rayfin-cli/package.json'));
-    const cliEntry = resolve(dirname(packageJson), 'scripts', 'main');
-
-    const queryDirectory = await mkdtemp(resolve(projectRoot, '.lyra-rayfin-'));
-    const payloadPath = resolve(queryDirectory, 'visual.query.json');
-    const resultPath = resolve(queryDirectory, 'visual.result.json');
-    try {
-        await writeFile(
-            payloadPath,
-            JSON.stringify({ query, resultSetRowCountLimit: QUERY_ROW_LIMIT }),
-            'utf8',
-        );
-        const args = buildQueryCliArgs(cliEntry, connection, payloadPath, resultPath);
-
-        try {
-            const { stdout } = await withRayfinCliLock(() => execFileAsync(process.execPath, args, {
-                cwd: projectRoot,
-                maxBuffer: 20 * 1024 * 1024,
-                timeout: 120_000,
-                windowsHide: true,
-            }));
-            assertResultFile(parseInvokeEnvelope(stdout), resultPath);
-        } catch (error) {
-            if (
-                typeof error === 'object'
-                && error !== null
-                && ('killed' in error && error.killed || 'signal' in error && error.signal)
-            ) {
-                throw new Error('The Rayfin connector invoke command timed out after 120 seconds.');
-            }
-            // A failed CLI process still reports the query failure as a JSON envelope on stdout.
-            if (typeof error === 'object' && error !== null && 'stdout' in error && error.stdout) {
-                parseInvokeEnvelope(String(error.stdout));
-            }
-            throw error;
-        }
-
-        let resultJson;
-        try {
-            resultJson = await readFile(resultPath, 'utf8');
-        } catch {
-            throw new Error('The Rayfin connector invoke command did not write a result file.');
-        }
-        return parseQueryResult(resultJson);
-    } finally {
-        await rm(queryDirectory, { recursive: true, force: true });
-    }
-}
-
-/**
- * Checks the JSON envelope printed by `npx rayfin connector invoke --json` and returns it.
- * Both a CLI-level failure and a connector result that reports its own failure are rejected
- * here, because either one exits before a usable result file exists.
- */
-export function parseInvokeEnvelope(stdout) {
-    let envelope;
-    try {
-        // The CLI prints its envelope as the final stdout line; tolerate anything printed before it.
-        const lastLine = stdout.split('\n').map((line) => line.trim()).filter(Boolean).at(-1);
-        envelope = JSON.parse(lastLine ?? '');
-    } catch {
-        throw new Error('The Rayfin connector invoke command did not return valid JSON.');
-    }
-
-    for (const failure of [envelope, envelope?.output]) {
-        if (failure?.status === 'error') {
-            const message = typeof failure.error === 'string'
-                ? failure.error
-                : failure.error?.message ?? JSON.stringify(failure.error);
-            // The CLI puts the actionable fix (for example, re-running without --json to
-            // grant Power BI consent) only in `recovery`, so it must not be dropped.
-            const recovery = typeof failure.recovery === 'string' && failure.recovery.trim()
-                ? ` ${failure.recovery.trim()}`
-                : '';
-            throw new Error(`Rayfin connector invoke failed: ${message}${recovery}`);
-        }
-    }
-
-    if (envelope?.status !== 'ok') {
-        throw new Error('The Rayfin connector invoke command returned an unexpected result shape.');
-    }
-
-    return envelope;
-}
-
-/**
- * Confirms that the CLI wrote the whole query result to the requested `--output-file`.
- *
- * Two different limits apply, and only one is acceptable:
- * - The query itself is deliberately capped at {@link QUERY_ROW_LIMIT} rows through
- *   `resultSetRowCountLimit`, so the result file holds at most that many rows. That cap is
- *   intended: validation checks at most the first 1,000 rows of a result.
- * - The CLI may additionally shrink an inline result larger than 8 KB to a preview
- *   (`outputTruncated`). That preview is rejected: it drops rows from the capped result,
- *   so a visual validated against it would be validated against the wrong data.
- */
-export function assertResultFile(envelope, resultPath) {
-    if (typeof envelope.outputFile !== 'string') {
-        throw new Error(envelope.outputTruncated
-            ? 'The Rayfin connector invoke command returned a truncated preview without a result file.'
-            : 'The Rayfin connector invoke command did not report the requested --output-file. '
-                + 'Upgrade @microsoft/rayfin-cli to ^1.36.1 (npm install) and retry.');
-    }
-    if (resolve(envelope.outputFile) !== resolve(resultPath)) {
-        throw new Error(
-            `The Rayfin connector invoke command wrote its result to ${envelope.outputFile} `
-            + 'instead of the requested --output-file.',
-        );
-    }
-}
-
-/**
- * Reads the full executeQuery result written to `--output-file` and returns its
- * { columns, rows } table. Rejects malformed results and empty data before rendering.
- */
-export function parseQueryResult(resultJson) {
-    let result;
-    try {
-        result = JSON.parse(resultJson);
-    } catch {
-        throw new Error('The Rayfin connector invoke result file did not contain valid JSON.');
-    }
-
-    if (
-        result?.status !== 'success'
-        || !Array.isArray(result.table?.columns)
-        || !Array.isArray(result.table?.rows)
-    ) {
-        throw new Error('The Rayfin connector invoke command returned an unexpected result shape.');
-    }
-
-    if (result.table.rows.length === 0) {
-        throw new Error('The query succeeded but returned no rows to render.');
-    }
-
-    return result.table;
-}
-
-export function buildQueryCliArgs(cliEntry, connection, payloadPath, resultPath) {
-    return [
-        cliEntry,
-        'connector',
-        'invoke',
-        '--name',
-        connection,
-        '--operation',
-        'executeQuery',
-        '--file',
-        payloadPath,
-        '--output-file',
-        resultPath,
-        '--json',
-    ];
 }
 
 export function findFactoryExport(factoryModule, factoryPath) {

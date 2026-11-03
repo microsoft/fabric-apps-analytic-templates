@@ -60,6 +60,8 @@ const data: DataTable = {
 
 When you need multiple marks (e.g., bars with text labels), put **all** marks inside the `layer` array. An optional shared `encoding` at the same level as `layer` is inherited by every layer entry, so you only need to specify mark-specific encodings inside each entry:
 
+> **Pie/donut exception:** Keep default pie and donut charts as unit `arc` specs so `VegaVisual` can add managed labels. Use an `arc` + `text` layer only when the user explicitly requests custom labels.
+
 ```json
 {
   "encoding": {
