@@ -1,6 +1,6 @@
 # Visual Container
 
-`VegaVisual` and `DataGrid` already wrap themselves in a `VisualContainer` — that is the default path and needs no extra component.
+`VegaVisual`, `DataGrid`, and `KpiCard` already wrap themselves in a `VisualContainer` — that is the default path and needs no extra component.
 
 Refer to `node_modules/@microsoft/fabric-visuals-extensibility/README.md` for the complete component API — every prop, type, and option. This reference covers the container patterns and constraints needed when building the template.
 
@@ -49,7 +49,7 @@ No layout wrapper is needed for these self-framing React components. Give virtua
 Hand-author a container only when the default path doesn't cover what you need:
 
 - custom actions, custom behavior on a built-in action (e.g. confirm before copy), or driving them programmatically — a PNG download, or Copy from a button elsewhere on the page
-- the same chrome around something that isn't a `VegaVisual` or `DataGrid` — a KPI card, a custom visual
+- the same chrome around a custom visual that does not frame itself
 
 ```tsx
 import { VisualContainer } from "@microsoft/fabric-visuals-extensibility";
@@ -79,8 +79,8 @@ Move the chrome up to the container and pass `chromeless` on the visual inside. 
 | `builtInActions` | `BuiltInActions` | Built-in actions by optional keyed configuration — `copyVisual` uses `CopyActionContext` (`{}`); `viewAsTable` uses `ShowAsTableActionContext` (`{ tableSource: provider }`). Rendered in order ahead of custom actions. |
 | `customActions` | `VisualContainerAction[]` | Your own buttons, rendered after the built-ins. |
 | `maxVisibleButtons` | `number` | Buttons beyond this collapse into a `…` overflow menu. Defaults to `2`. |
-| `rootClassName` | `string` | Merged onto the outermost element for placement and whole-container sizing. On a self-framing `VegaVisual` / `DataGrid`, use `containerRootClassName`. |
-| `className` | `string` | Merged onto the inner card surface for background, border, radius, and padding, not outer layout. On a self-framing `VegaVisual` / `DataGrid`, use `containerClassName`. |
+| `rootClassName` | `string` | Merged onto the outermost element for placement and whole-container sizing. On a self-framing `VegaVisual` / `DataGrid` / `KpiCard`, use `containerRootClassName`. |
+| `className` | `string` | Merged onto the inner card surface for background, border, radius, and padding, not outer layout. On a self-framing `VegaVisual` / `DataGrid` / `KpiCard`, use `containerClassName`. |
 
 Keep `copyVisual` in `builtInActions` — a hand-authored container is still expected to be copyable. Don't rebuild Copy as a custom action.
 

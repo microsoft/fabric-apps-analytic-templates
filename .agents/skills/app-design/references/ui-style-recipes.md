@@ -81,7 +81,6 @@ Use the 100-based scale (`text-100` through `text-hero-1000`). Pair sizes with m
 - Body text: `text-300 leading-300`
 - Small / secondary: `text-200 leading-200`
 - Section headings: `text-400 leading-400 font-semibold`
-- Hero metrics: `text-hero-900 leading-hero-900 font-bold`
 
 Do not use `leading-none` for stacked headings or metrics with labels, subtitles, or hints.
 
@@ -132,7 +131,7 @@ Any cluster of related interactive elements — form fields, filter panels, tool
 ### Cards
 
 - **Background**: `bg-card`
-- **KPI values**: `text-emphasis-foreground`
+- **KPI values**: `font-numeric text-kpi-value text-emphasis-foreground`
 - **Elevation**: choose shadow, border, or both to separate cards from the page. `shadow-container-4` + `border` is the baseline default; shadow-only, border-only, or borderless designs are all valid depending on the aesthetic direction.
 - **Internal spacing**: use `px-*` / `py-*` on content areas, `gap-*` between sections
 - **Structure**: compose from header, content, footer sections — don't enforce rigid slots

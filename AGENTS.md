@@ -32,6 +32,15 @@ The app client is already wired, so skip the skill's steps for it (constructing 
 
 Never guess ids; take them from `search` output or a URL the user gave you. Local `.pbix` files are not supported — only models published to the Power BI Service. A `401 GroupNotAccessible` after a successful `search` means you lack query access to that workspace, not that your session expired; check `npx rayfin login status` before re-running `npx rayfin login`.
 
+## Skill loading
+
+When a task needs a skill, load it in the same turn as the skills it usually works with, instead of loading one skill per turn as each one links to the next. These skills are usually needed together:
+
+- `dax-authoring` and `query-design`, for writing or changing queries.
+- `semantic-model-data`, `visuals`, `app-design`, and `visual-interactivity`, for building or changing the UI.
+
+Load them whenever the work needs them. There is no required order, so you can build and show the app incrementally.
+
 ## Semantic model schema (query the cached catalog)
 
 Discover the model through its local SQLite catalog, `npx fabric-app-semantic-model-tools query-schema`, which caches the
@@ -60,7 +69,9 @@ For visualizations backed by a Fabric semantic model, follow these four steps:
 // 1. barrel   src/queries/<page>/<viz>.ts exports { connection, query, columnMetadata, vegaLiteSpec }
 // 2. fetch    const { data, isLoading, error } = useSemanticModelQuery({ connection, query });
 // 3. shape    const table = toDataTable(data.table, columnMetadata);
-// 4. render   <VegaVisual spec={vegaLiteSpec} data={table} theme={theme} />   // or <DataGrid data={table} theme={theme} />
+// 4. render   <VegaVisual spec={vegaLiteSpec} data={table} theme={theme} />
+//          or <DataGrid data={table} theme={theme} />
+//          or <KpiCard callout={{ metric: { value: metricValue, format: metricFormat } }} theme={theme} />
 ```
 
 `connection` is the connector name declared in `rayfin/rayfin.yml`.
@@ -71,8 +82,8 @@ Runtime rules:
 
 - **DAX failures do not throw from the SDK.** `useSemanticModelQuery` maps failed query results, transport failures, and unexpected runtime failures to its `error` field. Handle `error`, then require `data.status === "success"` before touching `data.table`.
 - Connector error categories are `api`, `query`, `network`, `overflow`, and `unknown`; handle the full union rather than branching on a subset.
-- Key `columnMetadata` by the query's exact raw output column name. Give each entry a bracket-free `name` alias for Vega-Lite and DataGrid fields; raw names containing `.`, `[`, or `]` can render as `undefined`.
-- Pass the resolved `theme` from `useThemeContext()` to `VegaVisual` and `DataGrid`.
+- Key `columnMetadata` by the query's exact raw output column name. Give each entry a bracket-free `name` alias for component fields; raw names containing `.`, `[`, or `]` can render as `undefined`.
+- Pass the resolved `theme` from `useThemeContext()` to `VegaVisual`, `DataGrid`, and `KpiCard`.
 
 ## Project structure
 
@@ -84,9 +95,9 @@ tsconfig.json              # TypeScript configuration
 src/
 ├── main.tsx               # App entry point
 ├── App.tsx                # Main dashboard layout
+├── App.spec.tsx           # Existing App smoke test: update this file, don't create it again
 ├── ErrorFallback.tsx      # Error boundary fallback UI
 ├── global.css             # Tailwind design tokens
-├── data-palette-presets.json
 ├── components/
 ├── hooks/
 ├── lib/                   # Utilities, Rayfin client, connector wiring, query cache
@@ -96,7 +107,7 @@ src/
 
 ## Query and spec organization
 
-Group query files by page or domain under `src/queries/`. Each visualization uses the same kebab-case base name for its `.dax`, `.json`, and `.ts` files.
+Group query files by page or domain under `src/queries/`. Each component uses the same kebab-case base name for its `.dax`, `.json`, and `.ts` files.
 
 - Keep all DAX in `.dax` files and import it with Vite's `?raw` suffix.
 - Use separate `.dax` files when a parameter changes query structure.
@@ -105,13 +116,15 @@ Group query files by page or domain under `src/queries/`. Each visualization use
 - Re-export modules through an `index.ts` in each group and at the `src/queries/` root.
 - Never define Vega-Lite specs inline in component files.
 
-Validate each single-table visual immediately after completing its query factory and before UX design, editing `src/global.css`, or writing component code. Run `npm run validate:visual -- <query-factory.ts> [factory-params-json] [<query-factory.ts> [factory-params-json] ...]`, repeating a factory path for every relevant parameter variant. Run the validation command directly without piping it through `tail`, `grep`, `head`, or another command that can hide a nonzero exit status. Validate all completed factories in one command when possible, and do not proceed until every result passes. `validate:visual` checks at most the first 1,000 rows of each query result.
+Validate each single-table VegaVisual or KpiCard visual immediately after completing its query factory and before UX design, editing `src/global.css`, or writing component code. Run `npm run validate:visual -- <query-factory.ts> [factory-params-json] [<query-factory.ts> [factory-params-json] ...]`, repeating a factory path for every relevant parameter variant. Run the validation command directly without piping it through `tail`, `grep`, `head`, or another command that can hide a nonzero exit status. Validate all completed factories in one command when possible, and do not proceed until every result passes. `validate:visual` checks at most the first 1,000 rows of each query result.
 
 After the required schema and query results are understood, load and follow the [app-design](.agents/skills/app-design/SKILL.md) skill before writing presentation code.
 
 ## Unit tests
 
 Co-locate each spec file with the source file it tests.
+
+The template already ships specs: `src/App.spec.tsx`, `src/components/auth-gate.component.spec.tsx`, and specs in `src/hooks/` and `src/lib/`. When a spec for the file you test already exists, update it instead of creating it.
 
 - Always test pure utility functions in `src/lib/` and query factories in `src/queries/`. For factories, verify that parameter combinations produce the correct query string, column metadata, and spec modifications.
 - Test hooks as needed for state transitions, returned values, and side effects using a React hooks testing library.

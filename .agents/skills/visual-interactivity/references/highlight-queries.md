@@ -1,147 +1,77 @@
-# Highlight Queries — Aligned Subsets for Cross-Highlight Overlays
+# Cross-Highlight Queries
 
-A cross-highlight overlay layers a bright "selected subset" on a dimmed baseline. The subset comes from a fresh DAX query scoped by the selection — not from filtering the baseline result client-side.
+Cross-highlighting draws a bright selected subset over a dimmed baseline. For chart-local dimming without recomputation, use [native selections](native-selections.md).
 
-For general named dataset binding, see the visuals skill's [multi-data input](../../visuals/references/multi-data-input.md) reference. This page covers producing and rendering the subset table.
+## Re-aggregate the subset
 
-## When you need this
+Derive baseline and subset queries from the same [factory](query-factories.md), preserving:
 
-A chart layers two datasets at the same axis grain (dimmed baseline + bright subset), and the bright layer reflects a selection made elsewhere on the page.
+- Grouping columns and order, measure expressions, field aliases, and raw types.
+- Outer time and scope filters; the selection adds to them rather than replacing them.
+- The baseline's row keys, including groups with no selected facts.
 
-If the selection column is one of the chart's own encoding fields and you only need to dim non-matching rows, use [native selections](native-selections.md) in the spec — no query needed.
-
-## Re-aggregate, don't filter
-
-The baseline and the subset are two separate queries. The subset query has:
-
-- The **same grouping columns** as the baseline.
-- The **same measure expressions** as the baseline.
-- An **added filter** from the selection's predicates, via `CALCULATETABLE` + `TREATAS` / `KEEPFILTERS`.
-
-Wrap the baseline aggregation in `CALCULATETABLE`:
-
-```dax
-// Baseline
-EVALUATE
-  SUMMARIZECOLUMNS('Product'[Category], "Sales", [Total Sales])
-ORDER BY 'Product'[Category]
-```
-
-```dax
-// Subset — selection: Rating ∈ {PG, PG-13}
-EVALUATE
-  CALCULATETABLE(
-    SUMMARIZECOLUMNS('Product'[Category], "Sales", [Total Sales]),
-    TREATAS({"PG", "PG-13"}, 'Movie'[Rating])
-  )
-ORDER BY 'Product'[Category]
-```
-
-The model re-evaluates `[Total Sales]` under the added filter. `Movie[Rating]` doesn't appear in the result; the chart doesn't project it.
-
-## Match the baseline's row set
-
-The two layers register by axis key. Every baseline row needs a counterpart in the subset, even when the selection matches no fact rows for that group.
-
-`SUMMARIZECOLUMNS` drops groups where every measure is BLANK, which leaves gaps under baseline bars. Keep all rows one of two ways:
-
-**Option A — coalesce the measure to zero:**
+Wrap the baseline aggregation in `CALCULATETABLE`. Here, the selection filters an unprojected dimension:
 
 ```dax
 EVALUATE
-  CALCULATETABLE(
-    SUMMARIZECOLUMNS('Product'[Category], "Sales", COALESCE([Total Sales], 0)),
-    TREATAS({"PG", "PG-13"}, 'Movie'[Rating])
-  )
-ORDER BY 'Product'[Category]
-```
-
-**Option B — left-join the baseline's group list** (use when zero is wrong, e.g. a ratio that must stay BLANK):
-
-```dax
-EVALUATE
-  VAR Categories = SUMMARIZECOLUMNS('Product'[Category])
-  VAR Filtered =
     CALCULATETABLE(
-      SUMMARIZECOLUMNS('Product'[Category], "Sales", [Total Sales]),
-      TREATAS({"PG", "PG-13"}, 'Movie'[Rating])
+        SUMMARIZECOLUMNS('Product'[Category], "Sales", [Total Sales]),
+        KEEPFILTERS(TREATAS({"PG", "PG-13"}, 'Movie'[Rating]))
     )
-  RETURN NATURALLEFTOUTERJOIN(Categories, Filtered)
 ORDER BY 'Product'[Category]
 ```
 
-## Build the filter from a selection
+Let DAX evaluate measures under model relationships and RLS. Filtering the aggregated baseline cannot recompute non-additive measures or resolve unprojected columns. Target dimension columns rather than replacing these filters with `FILTER('FactTable', ...)`, and return raw values, not `FORMAT()` strings.
 
-`DataPointSelection[]` is a disjunction (OR) of conjunctions (AND) of predicates:
+## Preserve row keys
 
-- `SetPredicate` (`{ type: 'set', name, values }`) → `TREATAS(<values>, '<Table>'[<Column>])`.
-- `RangePredicate` (`{ type: 'range', name, min, max }`) → `FILTER('<Table>', '<Table>'[<Column>] >= min && '<Table>'[<Column>] <= max)`.
-- Multiple predicates in one selection → multiple filter arguments to the same `CALCULATETABLE` (AND).
-- Multiple selections → `UNION` the per-selection filter tables inside one `KEEPFILTERS` argument (OR).
+`SUMMARIZECOLUMNS` drops groups whose measures are all BLANK. Every baseline key still needs a subset counterpart:
 
-Assemble the query string in TypeScript and pass it to `useSemanticModelQuery`. Identical selections reuse the app-level query cache.
+- When zero is meaningful, use `COALESCE([Total Sales], 0)` to retain all-BLANK groups.
+- When BLANK must remain (for example, ratios), left-join the filtered aggregation onto the baseline's exact key table with `NATURALLEFTOUTERJOIN`.
 
-## Wiring it in the component
+Verify every baseline key survives; use the key-table join if filters remove groups despite `COALESCE`.
 
-The host component holds the selection (from another visual's `onInteraction`), fetches the aligned subset, and swaps the second named dataset on each change. Pass `{ all }` alone when there's no selection, `{ all, highlighted }` once a subset is fetched.
+## Translate selection predicates
 
-Both layers encode the same fields. The bright layer renders only at axis keys supplied by the highlighted table:
+`DataPointSelection[]` means OR between selections, AND between predicates within each selection.
+
+| Predicate | DAX |
+|---|---|
+| `SetPredicate`: `{ type: "set", name, values }` | `TREATAS(<values>, '<Table>'[<Column>])` |
+| `RangePredicate`: `{ type: "range", name, min, max }` | `FILTER('<Table>', '<Table>'[<Column>] >= min && '<Table>'[<Column>] <= max)`; omit absent bounds |
+| AND | Multiple filter arguments in one `CALCULATETABLE` |
+| OR | `UNION` compatible per-selection filter tables inside one `KEEPFILTERS` |
+
+## Component wiring
+
+The host receives `onInteraction`, queries the subset with `useSemanticModelQuery`, and supplies [named datasets](../../visuals/references/multi-data-input.md). Both layers share encodings:
 
 ```json
 {
+    "encoding": {
+        "x": { "field": "Category", "type": "nominal" },
+        "y": { "field": "Sales", "type": "quantitative" }
+    },
     "layer": [
         {
             "data": { "name": "all" },
-            "mark": { "type": "bar", "opacity": 0.3 },
-            "encoding": {
-                "x": { "field": "Category" },
-                "y": { "field": "Sales", "type": "quantitative" }
-            }
+            "mark": { "type": "bar", "opacity": 0.3 }
         },
         {
             "data": { "name": "highlighted" },
-            "mark": "bar",
-            "encoding": {
-                "x": { "field": "Category" },
-                "y": { "field": "Sales", "type": "quantitative" }
-            }
+            "mark": "bar"
         }
     ]
 }
 ```
 
 ```tsx
-function SalesByCategoryChart({ selections }: { selections: DataPointSelection[] | null }) {
-  const { theme } = useThemeContext();
-  const all = useBaselineTable();
-  const highlighted = useHighlightedTable(selections); // scoped CALCULATETABLE query; null when no selection
-
-  return (
-    <VegaVisual
-      spec={vegaLiteSpec}
-      data={highlighted ? { all, highlighted } : { all }}
-      theme={theme}
-    />
-  );
-}
+<VegaVisual
+    spec={vegaLiteSpec}
+    data={highlighted ? { all, highlighted } : { all }}
+    theme={theme}
+/>
 ```
 
-`useHighlightedTable` builds the scoped query from the selection's predicates (above) and runs it through `useSemanticModelQuery` — it does **not** filter `all` client-side.
-
-## Keep baseline and subset in sync
-
-When the baseline query changes, keep the subset query in sync with it:
-
-- Same grouping columns, same order.
-- Same measure name and expression — the spec's field reference (`y: { field: "Sales" }`) is shared by both layers.
-- Same outer time / scope filters; the selection adds to them, it doesn't replace them.
-
-Derive both from the same factory: the baseline query is the source; the subset query is `CALCULATETABLE(<baseline aggregation>, <selection predicates>)`.
-
-## Anti-patterns
-
-- ❌ **Filtering the baseline DataTable client-side.** Cannot re-aggregate measures, apply RLS, or resolve selections on unprojected columns. Wrong subtotals for any non-SUM measure (DISTINCTCOUNT, ratios, AVERAGEX, complex measures).
-- ❌ **`FILTER('FactTable', …)` instead of `TREATAS` on the dimension column.** Targets the wrong table, ignores relationships, slower.
-- ❌ **Letting `SUMMARIZECOLUMNS` drop empty groups.** Causes axis-key gaps. Use `COALESCE` or a left-join.
-- ❌ **Changing grain or column shape in the subset query.** The layers no longer share an axis.
-- ❌ **`FORMAT()` in the subset query.** Stringified measures break the shared field encoding. Return raw types.
+Set `highlighted` to `null` when no selection is active. When the baseline changes, refresh the subset too; replace the pair only after both requests succeed, never mixing fresh and stale tables.

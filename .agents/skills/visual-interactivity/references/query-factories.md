@@ -1,68 +1,19 @@
-# Query Factories for Runtime Interaction
+# Runtime Query Factories
 
-Use a parameterized query factory when runtime interaction state changes a DAX query or Vega-Lite spec. Follow the template's [query-factory conventions](../../../../AGENTS.md#query-and-spec-organization) for every visual; keep factories without runtime inputs parameterless.
-
-## File organization
-
-Keep the same kebab-case base name used by query factories. Add variant `.dax` files when runtime state changes the query's structure.
-
-```
-src/queries/
-    index.ts
-    {page-or-domain}/
-        {visualization-name}.dax
-        {visualization-name}-{variant}.dax  # Only for structural variants
-        {visualization-name}.json
-        {visualization-name}.ts             # Parameterized factory
-        index.ts
-```
+Parameterize factories only when runtime state changes DAX or a Vega-Lite spec; otherwise keep them parameterless. Follow the template's [query-factory conventions](../../../../AGENTS.md#query-and-spec-organization) for file names, metadata, barrel exports, and validation.
 
 ## Factory contract
 
-Factory parameters are use-case-specific and typed. They translate runtime interaction state into a query or spec while returning the same shape as a parameterless factory.
-
-```ts
-import type { ColumnMetadataMap } from "@/lib/to-data-table";
-import baseQuery from "./revenue-by-region.dax?raw";
-import baseSpec from "./revenue-by-region.json";
-
-const connection: string = "{connection-alias}";
-
-const columnMetadata: ColumnMetadataMap = {
-    "Products[Region]": { name: "ProductsRegion", displayName: "Region" },
-    "[Total Revenue]": {
-        name: "Total Revenue",
-        displayName: "Total Revenue",
-        format: "$#,0.00",
-    },
-};
-
-interface RevenueByRegionParams {
-    selectedCategories?: readonly string[];
-}
-
-export function revenueByRegion(params?: RevenueByRegionParams) {
-    let query: string = baseQuery;
-
-    if (params?.selectedCategories?.length) {
-        // Apply the selected values to a known model column. Escape every DAX
-        // string literal; never accept a runtime column or table identifier.
-    }
-
-    return {
-        connection,
-        query,
-        columnMetadata,
-        vegaLiteSpec: baseSpec,
-    };
-}
-```
-
-The base query must remain in a `.dax` file. Small value substitutions or a `CALCULATETABLE` wrapper may be assembled in TypeScript, but do not inline the full base query or accept arbitrary model identifiers from component state.
+- Accept typed, use-case-specific state.
+- Return `connection`, `query`, `columnMetadata`, and `vegaLiteSpec`.
+- Import `.dax` queries with `?raw` and specs from `.json`; never inline a full base query.
+- Map identifiers through closed maps of known model columns; reject unknown IDs.
+- Escape values for their DAX literal type; in strings, replace `"` with `""`.
+- Assemble small value substitutions or `CALCULATETABLE` wrappers in TypeScript, not arbitrary model identifiers.
 
 ## Structural variants
 
-When interaction changes grouping columns, measures, or result shape, keep each complete query in its own `.dax` file and select it from a closed typed map:
+When grouping, measures, or result shape changes, use separate complete `.dax` files. With shared `connection`, `columnMetadata`, and `vegaLiteSpec` defined:
 
 ```ts
 import monthlyQuery from "./revenue-trend-monthly.dax?raw";
@@ -87,18 +38,18 @@ export function revenueTrend(params: { granularity: Granularity }) {
 }
 ```
 
-Do not use structural variants when one stable query can return the required shape and the interaction only changes client-side presentation.
+Select matching metadata and specs if the result shape differs. Do not add query variants for presentation-only changes.
 
 ## Component wiring
 
-Call the factory with interaction state before invoking `useSemanticModelQuery`. A changed query key causes a new request and uses the app-level query cache for previously seen values.
+Call the factory before the query hook:
 
 ```tsx
-const config = revenueByRegion({ selectedCategories });
+const config = revenueTrend({ granularity });
 const result = useSemanticModelQuery({
     connection: config.connection,
     query: config.query,
 });
 ```
 
-Keep the previous successful visual rendered while the replacement query loads. Surface query failures instead of converting them into empty success results.
+Changed queries trigger requests; repeated query keys reuse the app-level cache. Keep the previous successful render while loading, and surface failures rather than returning empty success results.

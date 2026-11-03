@@ -1,6 +1,6 @@
 # Native Vega-Lite Selections
 
-When an interaction stays within a single visual, such as clicking a bar to dim the others or hovering a point to emphasize matches, use Vega-Lite's native selection with a conditional encoding. This uses one `DataTable`, no named map, and no second dataset.
+For chart-local click or hover emphasis, use a selection with conditional encoding. One `DataTable` is enough; no query or named datasets.
 
 ```json
 {
@@ -17,4 +17,4 @@ When an interaction stays within a single visual, such as clicking a bar to dim 
 }
 ```
 
-Use `onInteraction` to surface selections to application code. Use a parameterized query only when the behavior must recompute data rather than restyle marks already present in the chart.
+With `empty: false`, bars remain dimmed until selected. Use `onInteraction` for host behavior and a [query factory](query-factories.md) for recomputation.

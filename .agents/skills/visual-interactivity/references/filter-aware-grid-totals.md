@@ -1,46 +1,38 @@
 # Filter-Aware DataGrid Totals
 
-DataGrid filtering is enabled by default. Keep server-provided totals synchronized with local grid filters; DataGrid does not recompute provided totals automatically.
+DataGrid filters locally by default but does not recompute provided totals. Re-query the total without removing body rows needed for local filtering.
 
 ## Query shape
 
-Start with the query-design skill's [flagged rollup](../../query-design/references/multi-grain-patterns.md#datagrid-grand-total-query), including its metadata and payload-limiting rules. Keep body rows and the grand total in one flagged query. Pass the current grid filter through `ROLLUPADDISSUBTOTAL`'s optional `grandtotalFilter` so it constrains the total without removing body rows that DataGrid still needs:
+Extend the [flagged rollup](../../query-design/references/multi-grain-patterns.md#datagrid-grand-total-query), retaining its metadata and payload limits. Return body rows and total in one query; put local filters in `ROLLUPADDISSUBTOTAL`'s optional `grandtotalFilter`:
 
 ```dax
 DEFINE
     VAR _GrandTotalFilter =
         TREATAS({<selected-values>}, '<GridDimension>'[<GridColumn>])
 
-    VAR _RollupResult =
-        SUMMARIZECOLUMNS(
-            ROLLUPADDISSUBTOTAL(
-                _GrandTotalFilter,
-                ROLLUPGROUP(
-                    '<Dimension1>'[<Column1>],
-                    '<Dimension2>'[<Column2>]
-                ),
-                "IsGrandTotal"
+EVALUATE
+    SUMMARIZECOLUMNS(
+        ROLLUPADDISSUBTOTAL(
+            _GrandTotalFilter,
+            ROLLUPGROUP(
+                '<Dimension1>'[<Column1>],
+                '<Dimension2>'[<Column2>]
             ),
-            "<MetricAlias>", [<Measure>]
-        )
-
-EVALUATE _RollupResult
+            "IsGrandTotal"
+        ),
+        "<MetricAlias>", [<Measure>]
+    )
 ORDER BY
     '<Dimension1>'[<Column1>] ASC,
     '<Dimension2>'[<Column2>] ASC
 ```
 
-When no local filter is active, omit `_GrandTotalFilter` and the first `ROLLUPADDISSUBTOTAL` argument. For multiple grid filters, create one `TREATAS` table per known filterable column and combine them with `CROSSJOIN` for the `grandtotalFilter`.
+With no local filter, omit `_GrandTotalFilter` and its argument. For multiple filters, `CROSSJOIN` one `TREATAS` table per known filterable column.
 
 ## Factory safety
 
-Use a typed [query factory](query-factories.md) to accept filter state.
-
-- Map `GridColumnDef.id` values through a closed map of known DAX columns.
-- Reject unknown column IDs; never interpolate an arbitrary identifier.
-- Escape every selected value according to its DAX literal type.
-- Keep application/page filters applied to both body and total evaluation.
-- Apply local grid filters only through `grandtotalFilter`.
+Use a typed [query factory](query-factories.md): map `GridColumnDef.id` through a closed DAX-column map, reject unknown IDs, and escape literals by type. Application/page filters affect body and totals; local grid filters go only in `grandtotalFilter`.
 
 ## Component wiring
 
@@ -79,4 +71,4 @@ const { bodyTable, grandTotalTable } = toRollupDataTables(
 />
 ```
 
-Changing `gridFilters` re-executes the combined query. The hook retains the previous result during a replacement request, allowing DataGrid to keep rendering and filtering the complete body table. Replace the provided total only after the updated query succeeds. Always pass the returned `grandTotalTable` through `grandTotals.data`; omitting `data` selects client-computed mode.
+Changing `gridFilters` re-queries; the hook retains the previous result while loading. Keep rendering the body and replace the total only on success. Always pass `grandTotalTable` through `grandTotals.data`; omitting it selects client-computed totals.
