@@ -12,9 +12,53 @@ import { renderVisualToSvg } from '@microsoft/fabric-visuals/headless';
 
 import { createVisualInputLoader, parseValidationRequests } from './visual-input.mjs';
 
+const CUSTOM_ARC_LABELS_DIAGNOSTIC = {
+    severity: 'warning',
+    source: 'visualAuthoring',
+    message: 'This pie/donut uses an authored text layer, so Fabric managed labels are disabled. '
+        + 'Use a unit arc spec unless custom labels are intentional.',
+};
+
+function markType(spec) {
+    return typeof spec?.mark === 'string' ? spec.mark : spec?.mark?.type;
+}
+
+function fieldName(channel) {
+    return typeof channel?.field === 'string' ? channel.field : undefined;
+}
+
+function hasAuthoredArcLabels(spec) {
+    if (!spec || typeof spec !== 'object') return false;
+
+    if (Array.isArray(spec.layer)) {
+        const sharedThetaField = fieldName(spec.encoding?.theta);
+        const arcThetaFields = new Set(spec.layer
+            .filter((layer) => markType(layer) === 'arc')
+            .map((layer) => fieldName(layer.encoding?.theta) ?? sharedThetaField)
+            .filter(Boolean));
+        const hasMatchingTextLayer = spec.layer.some((layer) =>
+            markType(layer) === 'text'
+            && layer.encoding?.text !== undefined
+            && arcThetaFields.has(fieldName(layer.encoding?.theta) ?? sharedThetaField));
+
+        if (hasMatchingTextLayer) return true;
+        if (spec.layer.some(hasAuthoredArcLabels)) return true;
+    }
+
+    for (const key of ['concat', 'hconcat', 'vconcat']) {
+        if (Array.isArray(spec[key]) && spec[key].some(hasAuthoredArcLabels)) return true;
+    }
+    return hasAuthoredArcLabels(spec.spec);
+}
+
+export function getVisualAuthoringDiagnostics(spec) {
+    return hasAuthoredArcLabels(spec) ? [{ ...CUSTOM_ARC_LABELS_DIAGNOSTIC }] : [];
+}
+
 export async function renderVisual(spec, data) {
     const result = await renderVisualToSvg(spec, { data });
-    const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    const diagnostics = [...result.diagnostics, ...getVisualAuthoringDiagnostics(spec)];
+    const errors = diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
     if (errors.length > 0) {
         throw new Error(errors
             .map((diagnostic) => `[${diagnostic.source}] ${diagnostic.message}`)
@@ -28,7 +72,7 @@ export async function renderVisual(spec, data) {
 
     return {
         dataMarkCount: result.renderedDataMarkCount,
-        diagnostics: result.diagnostics,
+        diagnostics,
         markTypes: result.renderedMarkCountsByType,
         svg: result.svg,
     };

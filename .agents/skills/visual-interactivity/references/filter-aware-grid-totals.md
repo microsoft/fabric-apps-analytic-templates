@@ -72,3 +72,25 @@ const { bodyTable, grandTotalTable } = toRollupDataTables(
 ```
 
 Changing `gridFilters` re-queries; the hook retains the previous result while loading. Keep rendering the body and replace the total only on success. Always pass `grandTotalTable` through `grandTotals.data`; omitting it selects client-computed totals.
+
+## Managed targets
+
+When the grid is an Interaction Manager target, load the same combined flagged query through `useQueryFactoryTarget`, then split the accepted table with `splitRollupDataTable` so the body and total come from one result. The hook has already applied the column metadata, so name flag and internal columns by their converted `name` aliases.
+
+The factory also accepts `ManagedQueryFactoryParams` and inserts the interaction filters after `ROLLUPADDISSUBTOTAL(...)` and before the measures (`"beforeMeasures"`), so they constrain both body rows and the total. DataGrid's local column filters still constrain only the total through `grandtotalFilter`.
+
+```tsx
+import { useQueryFactoryTarget } from "@/hooks/use-query-factory-target";
+import { splitRollupDataTable } from "@/lib/to-data-table";
+
+const result = useQueryFactoryTarget("revenueGrid", revenueByRegion, { filters: gridFilters });
+
+if (result.status === "loading") return <LoadingSpinner />;
+if (result.status === "error") return <ErrorMessage message={result.error.message} />;
+
+const { bodyTable, grandTotalTable } = splitRollupDataTable(result.data, {
+    rollupFlagColumns: ["IsGrandTotal"],
+});
+```
+
+Render `DataGrid` with `bodyTable`, `grandTotals.data`, and `onFilterChange` as above, adding the source props when the grid is also a source. During `"refreshing"`, `result.data` keeps the previous body and total together.

@@ -1,77 +1,81 @@
-# Cross-Highlight Queries
+# Highlight Queries
 
-Cross-highlighting draws a bright selected subset over a dimmed baseline. For chart-local dimming without recomputation, use [native selections](native-selections.md).
+Cross-highlighting keeps the baseline visible and draws a re-aggregated subset
+over it. Load both with `useQueryFactoryTarget` and a highlight alignment, then
+pass them to `VegaVisual` with the target's existing spec. This extends the
+filter-only target in [query factories](query-factories.md#load-the-target).
 
-## Re-aggregate the subset
+## Load and align
 
-Derive baseline and subset queries from the same [factory](query-factories.md), preserving:
+Pass the `createHighlightData` settings as the hook's fourth argument. During an
+active cross-highlight, the hook runs the factory under the baseline and
+highlight filters and aligns the subset with the baseline. Otherwise it runs
+only the baseline and returns it as both datasets.
 
-- Grouping columns and order, measure expressions, field aliases, and raw types.
-- Outer time and scope filters; the selection adds to them rather than replacing them.
-- The baseline's row keys, including groups with no selected facts.
+```ts
+import type { HighlightAlignment } from "@/hooks/use-query-factory-target";
 
-Wrap the baseline aggregation in `CALCULATETABLE`. Here, the selection filters an unprojected dimension:
-
-```dax
-EVALUATE
-    CALCULATETABLE(
-        SUMMARIZECOLUMNS('Product'[Category], "Sales", [Total Sales]),
-        KEEPFILTERS(TREATAS({"PG", "PG-13"}, 'Movie'[Rating]))
-    )
-ORDER BY 'Product'[Category]
+const categoryAlignment: HighlightAlignment = {
+    groupingFields: ["Category"],
+    missingMeasureReplacementValues: { Value: 0 },
+    plottedMeasureFields: ["Value"],
+};
 ```
 
-Let DAX evaluate measures under model relationships and RLS. Filtering the aggregated baseline cannot recompute non-additive measures or resolve unprojected columns. Target dimension columns rather than replacing these filters with `FILTER('FactTable', ...)`, and return raw values, not `FORMAT()` strings.
+When writing the alignment:
 
-## Preserve row keys
+- List every group and series key in `groupingFields`, including hidden
+  identifiers. Alignment uses raw key values; never substitute localized display
+  labels. A series field requires alignment by both category and series.
+- Alignment throws on duplicate tuples and on subset tuples outside the baseline.
+- In `missingMeasureReplacementValues`, give each measure the value for a baseline
+  group absent from the subset: `0` when absence means zero, as for sums and
+  counts, or `null` to keep BLANK, as for ratios.
+- List the measures the chart draws in `plottedMeasureFields`.
 
-`SUMMARIZECOLUMNS` drops groups whose measures are all BLANK. Every baseline key still needs a subset counterpart:
+For Top N, do not rerun the ranking under highlight filters; see
+[Top N highlight targets](advanced-query-shapes.md#top-n-highlight-targets).
 
-- When zero is meaningful, use `COALESCE([Total Sales], 0)` to retain all-BLANK groups.
-- When BLANK must remain (for example, ratios), left-join the filtered aggregation onto the baseline's exact key table with `NATURALLEFTOUTERJOIN`.
+## Render the target
 
-Verify every baseline key survives; use the key-table join if filters remove groups despite `COALESCE`.
-
-## Translate selection predicates
-
-`DataPointSelection[]` means OR between selections, AND between predicates within each selection.
-
-| Predicate | DAX |
-|---|---|
-| `SetPredicate`: `{ type: "set", name, values }` | `TREATAS(<values>, '<Table>'[<Column>])` |
-| `RangePredicate`: `{ type: "range", name, min, max }` | `FILTER('<Table>', '<Table>'[<Column>] >= min && '<Table>'[<Column>] <= max)`; omit absent bounds |
-| AND | Multiple filter arguments in one `CALCULATETABLE` |
-| OR | `UNION` compatible per-selection filter tables inside one `KEEPFILTERS` |
-
-## Component wiring
-
-The host receives `onInteraction`, queries the subset with `useSemanticModelQuery`, and supplies [named datasets](../../visuals/references/multi-data-input.md). Both layers share encodings:
-
-```json
-{
-    "encoding": {
-        "x": { "field": "Category", "type": "nominal" },
-        "y": { "field": "Sales", "type": "quantitative" }
-    },
-    "layer": [
-        {
-            "data": { "name": "all" },
-            "mark": { "type": "bar", "opacity": 0.3 }
-        },
-        {
-            "data": { "name": "highlighted" },
-            "mark": "bar"
-        }
-    ]
-}
-```
+Pass the target's existing spec unchanged. Do not author overlay layers, sort
+fields, or radius calculations. Bind the source and target beneath the same
+provider and call all hooks before early returns:
 
 ```tsx
-<VegaVisual
-    spec={vegaLiteSpec}
-    data={highlighted ? { all, highlighted } : { all }}
-    theme={theme}
-/>
+const source = useManagedInteractionSource("categoryChart");
+const result = useQueryFactoryTarget("categoryChart", categoryChart, {}, categoryAlignment);
+const { theme } = useThemeContext();
+if (result.status === "loading") return <div>Loading...</div>;
+if (result.status === "error") return <div role="alert">{result.error.message}</div>;
+
+return <>
+    {source.error && <div role="alert">{source.error.message}</div>}
+    <VegaVisual
+        spec={vegaLiteSpec}
+        data={result.data}
+        isCrossHighlightActive={result.isCrossHighlightActive}
+        selections={source.selections}
+        selectableFields={source.selectableFields}
+        onInteraction={source.onInteraction}
+        theme={theme}
+    />
+    {result.status === "refreshing" && <div role="status">Refreshing...</div>}
+</>;
 ```
 
-Set `highlighted` to `null` when no selection is active. When the baseline changes, refresh the subset too; replace the pair only after both requests succeed, never mixing fresh and stale tables.
+Always pass `result.data` with `result.isCrossHighlightActive` from the same
+result; while refreshing, both still describe the displayed load.
+
+With an active highlight, `VegaVisual` dims the baseline and draws the
+highlighted values on top; generated data labels stay on the baseline values.
+If it reports a cross-highlight diagnostic and renders only the highlighted rows,
+check the supported shapes in the README's
+[Cross-highlight overlays](../../../../node_modules/@microsoft/fabric-interaction-manager/README.md#cross-highlight-overlays),
+then simplify the spec to a supported shape or set `canHighlight: false`.
+
+A spec that references named datasets receives `all` and `highlighted` and draws
+its own layers instead. Use this only when a highlight target needs layers the
+automatic overlay cannot draw, and verify that the layers keep the baseline
+geometry. See the visuals skill's
+[multi-data input](../../visuals/references/multi-data-input.md) for named data.

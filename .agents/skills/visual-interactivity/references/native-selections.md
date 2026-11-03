@@ -17,4 +17,4 @@ For chart-local click or hover emphasis, use a selection with conditional encodi
 }
 ```
 
-With `empty: false`, bars remain dimmed until selected. Use `onInteraction` for host behavior and a [query factory](query-factories.md) for recomputation.
+With `empty: false`, bars remain dimmed until selected. Leave native selection parameters out of specs bound to an Interaction Manager source. A managed source passes `selections`, `selectableFields`, and `onInteraction` to the visual, which dims its own unselected marks. Use a [query factory](query-factories.md) for recomputation.

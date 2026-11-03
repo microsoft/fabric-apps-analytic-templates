@@ -1,30 +1,32 @@
 ---
 name: visuals
 description: >
-  Use when user wants to incorporate charts, graphs, KPI cards, data grid,
+  Use when user wants to incorporate charts, graphs, KPI cards, data grid, slicers,
   or other visual representations of data into their project.
-  Use VegaVisual, KpiCard, and DataGrid components to create these visuals,
+  Use VegaVisual, KpiCard, DataGrid, and built-in slicer components,
   utilizing the shared DataTable input, formatting, and theme.
-  Covers the VisualContainer chrome every visual gets by default,
+  Covers the VisualContainer chrome charts, KPI cards, and grids get by default,
   plus named multi-table data input for layered overlays and reference lines.
 ---
 
 # Visuals
 
 ## Types of visuals
-There are 3 different types of visuals that can be used in a project:
+There are 4 different types of visuals that can be used in a project:
 1. Charts and Graphs: These are used to represent data in a visual format, such as bar charts, line charts, pie charts, etc. These are built using vega-lite, see [references/vega-lite-visual.md](references/vega-lite-visual.md) for more details.
 2. Data Grids: These are used to display tabular data in a structured format, allowing for sorting, filtering, and pagination. See [references/data-grid-visual.md](references/data-grid-visual.md) for more details.
 3. KPI cards: Callout metrics with optional chart and reference regions. Follow [references/kpi-card-visual.md](references/kpi-card-visual.md) for component selection, data contracts, validation, and rendering.
+4. Slicers: Prefer built-in components when they support the required app/page filtering behavior. Read the `@microsoft/fabric-slicers` README for component selection and usage.
 
 ## Packages & Imports
 
-The visual components are provided by three packages. **Always use these package imports when creating visuals.**
+The visual components are provided by four packages. **Always use these package imports when creating visuals.**
 
 | Package | Primary exports | Example import |
 |---|---|---|
 | `@microsoft/fabric-visuals` | `VegaVisual`, `KpiCard`, types: `VisualizationSpec`, `VegaLiteConfig`, `VegaVisualProps`, `KpiCardProps` | `import { VegaVisual } from "@microsoft/fabric-visuals"` |
 | `@microsoft/fabric-datagrid` | `DataGrid`, types: `GridColumnDef`, `Row`, `CellValue`, `DataGridProps`, `DataGridTheme`, `SortConfig` | `import { DataGrid } from "@microsoft/fabric-datagrid"` |
+| `@microsoft/fabric-slicers` | `DropdownSlicer`, `ListSlicer`, `DateSlicer`, `RangeSlicer` | `import { DropdownSlicer } from "@microsoft/fabric-slicers"` |
 | `@microsoft/fabric-visuals-core` | `isDataTable`, `convertDataTableToRows`, design tokens | `import { isDataTable } from "@microsoft/fabric-visuals-core"` |
 
 The `DataTable` type (used by both components) is defined in `@microsoft/fabric-visuals-core` and re-exported by the visual packages' type definitions.
@@ -92,4 +94,4 @@ Always use the above mentioned ways to create visual when possible. If the user'
 
 ## Interactivity
 
-**Always use the `onInteraction` prop** on `VegaVisual` and `DataGrid` to surface user selections. Follow the [visual-interactivity](../visual-interactivity/SKILL.md) skill for event handling, native Vega-Lite selections, coordinated filtering and highlighting, filter-aware grid totals, and parameterized query factories.
+Follow the [visual-interactivity](../visual-interactivity/SKILL.md) skill for event handling, native Vega-Lite selections, coordinated filtering and highlighting, filter-aware grid totals, and parameterized query factories.

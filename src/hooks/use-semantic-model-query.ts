@@ -148,6 +148,23 @@ async function executeSemanticModelQuery(
 }
 
 /**
+ * Runs one DAX query through the app-level query cache. `useSemanticModelQuery` and
+ * `executeQueryFactory` both read and write semantic model results through this function.
+ */
+export function querySemanticModel(
+    connection: string,
+    query: string,
+    bypassCache: boolean,
+): Promise<CachedQueryResult<SemanticModelQueryResult>> {
+    return cachedQuery({
+        cachePrefixKey: cachePrefixKeyFor("semanticModels", connection),
+        query,
+        bypassCache,
+        execute: () => executeSemanticModelQuery(connection, query),
+    });
+}
+
+/**
  * React hook that executes a DAX query against a Power BI semantic model
  * through the `fabric-semanticmodel` connector. Results are cached by the
  * app-level query cache in `src/lib/query-cache.ts`, which is shared across
@@ -234,12 +251,7 @@ export function useSemanticModelQuery(
             const skipCache = Boolean(bypassCache) || forceRefresh;
 
             try {
-                const result = await cachedQuery({
-                    cachePrefixKey: cachePrefixKeyFor("semanticModels", connection),
-                    query,
-                    bypassCache: skipCache,
-                    execute: () => executeSemanticModelQuery(connection, query),
-                });
+                const result = await querySemanticModel(connection, query, skipCache);
 
                 if (!isLatestRequest()) return;
 

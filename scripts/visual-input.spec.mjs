@@ -7,49 +7,21 @@
 
 // @vitest-environment node
 
-import { existsSync } from 'node:fs';
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { acquireRayfinCliLock, withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
 import { createServer } from 'vite';
 
 import { toDataTable } from '../src/lib/to-data-table.ts';
-import {
-    assertResultFile,
-    buildQueryCliArgs,
-    createVisualInputLoader,
-    findFactoryExport,
-    parseInvokeEnvelope,
-    parseQueryResult,
-    parseValidationRequests,
-} from './visual-input.mjs';
+import { createVisualInputLoader, findFactoryExport, parseValidationRequests } from './visual-input.mjs';
 
-const { execFileAsync } = vi.hoisted(() => ({ execFileAsync: vi.fn() }));
-vi.mock('node:child_process', async () => {
-    const { promisify } = await import('node:util');
-    return { execFile: Object.assign(vi.fn(), { [promisify.custom]: execFileAsync }) };
-});
 vi.mock('vite', () => ({ createServer: vi.fn() }));
-// The real Rayfin CLI lock, observed: every CLI run must hold it.
-vi.mock('@microsoft/fabric-app-semantic-model-tools/connector', async (importOriginal) => {
-    const actual = await importOriginal();
-    return { ...actual, withRayfinCliLock: vi.fn(actual.withRayfinCliLock) };
-});
 
 const queryTable = {
     columns: [{ name: '[Value]', dataType: 'number' }],
     rows: [[1]],
-};
-const queryResult = { status: 'success', table: queryTable, requestId: 'request-1' };
-const successEnvelope = {
-    status: 'ok',
-    connector: 'sales',
-    operation: 'executeQuery',
-    output: queryResult,
 };
 const definition = {
     connection: 'sales',
@@ -58,32 +30,11 @@ const definition = {
     vegaLiteSpec: { mark: 'bar', encoding: { x: { field: 'value', type: 'quantitative' } } },
 };
 
-/**
- * Stands in for the CLI: writes the full result to --output-file and prints the envelope,
- * which reports the absolute path it wrote.
- */
-function mockInvoke(result = queryResult, envelope = successEnvelope) {
-    execFileAsync.mockImplementation(async (_command, args, options) => {
-        const outputFile = resolve(options?.cwd ?? process.cwd(), args[args.indexOf('--output-file') + 1]);
-        await writeFile(outputFile, JSON.stringify(result), 'utf8');
-        return { stdout: JSON.stringify({ outputFile, ...envelope }) };
-    });
-}
-
 beforeEach(() => {
     vi.resetAllMocks();
-    mockInvoke();
 });
 
 describe('visual input', () => {
-    it('invokes the semantic-model connector through the Rayfin CLI with payload and result files', () => {
-        expect(buildQueryCliArgs('cli-entry.js', 'sales', '/tmp/q.json', '/tmp/r.json')).toEqual([
-            'cli-entry.js', 'connector', 'invoke',
-            '--name', 'sales', '--operation', 'executeQuery',
-            '--file', '/tmp/q.json', '--output-file', '/tmp/r.json', '--json',
-        ]);
-    });
-
     it('parses multiple factories and JSON-object parameter variants', () => {
         expect(parseValidationRequests([
             'src/queries/sales/revenue.ts',
@@ -112,74 +63,6 @@ describe('visual input', () => {
         expect(() => findFactoryExport({ metadata: {} }, 'different-file-name.ts'))
             .toThrow('Available exports: metadata.');
     });
-
-    it('accepts a successful envelope and rejects failed or malformed ones', () => {
-        expect(parseInvokeEnvelope(JSON.stringify(successEnvelope))).toEqual(successEnvelope);
-        // The CLI may print progress before its envelope; only the final JSON line is the result.
-        expect(parseInvokeEnvelope(`Invoking sales.executeQuery\n${JSON.stringify(successEnvelope)}\n`))
-            .toEqual(successEnvelope);
-        // A CLI-level failure and a connector result that declares its own failure both have to be rejected.
-        for (const failure of [
-            { status: 'error', error: 'Bad DAX' },
-            { ...successEnvelope, output: { status: 'error', error: { message: 'Bad DAX' } } },
-            { ...successEnvelope, output: { status: 'error', error: 'Bad DAX' } },
-        ]) {
-            expect(() => parseInvokeEnvelope(JSON.stringify(failure)))
-                .toThrow('Rayfin connector invoke failed: Bad DAX');
-        }
-        expect(() => parseInvokeEnvelope('not-json')).toThrow('did not return valid JSON');
-        expect(() => parseInvokeEnvelope('')).toThrow('did not return valid JSON');
-        for (const envelope of [null, {}, { status: 'success', table: queryTable }]) {
-            expect(() => parseInvokeEnvelope(JSON.stringify(envelope))).toThrow('unexpected result shape');
-        }
-    });
-
-    it('keeps the CLI recovery hint, which is often the only actionable part of a failure', () => {
-        // Shape of the CLI's --json failure when Power BI consent needs an interactive prompt.
-        const consentFailure = {
-            status: 'error',
-            error: 'Not signed in, or no Power BI token could be acquired without an interactive prompt.',
-            recovery: 'Re-run without `--json` to complete Power BI consent interactively, then retry.',
-        };
-        expect(() => parseInvokeEnvelope(JSON.stringify(consentFailure))).toThrow(
-            'Rayfin connector invoke failed: Not signed in, or no Power BI token could be acquired '
-            + 'without an interactive prompt. Re-run without `--json` to complete Power BI consent '
-            + 'interactively, then retry.',
-        );
-        // A blank recovery adds nothing, and the message stays exactly as before.
-        expect(() => parseInvokeEnvelope(JSON.stringify({ status: 'error', error: 'Bad DAX', recovery: ' ' })))
-            .toThrow(/^Rayfin connector invoke failed: Bad DAX$/);
-    });
-
-    it('requires the envelope to point at the requested result file', () => {
-        const resultPath = resolve('.lyra-rayfin-test', 'visual.result.json');
-        expect(() => assertResultFile({ ...successEnvelope, outputFile: resultPath }, resultPath)).not.toThrow();
-        expect(() => assertResultFile({ ...successEnvelope, outputFile: resultPath, outputTruncated: true }, resultPath))
-            .not.toThrow();
-        expect(() => assertResultFile(successEnvelope, resultPath)).toThrow('Upgrade @microsoft/rayfin-cli');
-        expect(() => assertResultFile({ ...successEnvelope, outputTruncated: true }, resultPath))
-            .toThrow('truncated preview without a result file');
-        expect(() => assertResultFile({ ...successEnvelope, outputFile: resolve('other.json') }, resultPath))
-            .toThrow('instead of the requested --output-file');
-    });
-
-    it('parses the result file and rejects empty or malformed results', () => {
-        expect(parseQueryResult(JSON.stringify(queryResult))).toEqual(queryTable);
-        expect(() => parseQueryResult(JSON.stringify({
-            ...queryResult, table: { columns: [], rows: [] },
-        }))).toThrow('returned no rows');
-        expect(() => parseQueryResult('not-json')).toThrow('did not contain valid JSON');
-        for (const result of [
-            null,
-            {},
-            { status: 'success', table: { rows: [[1]] } },
-            { status: 'success', table: { columns: [] } },
-            // The envelope belongs on stdout; the result file holds the result itself.
-            successEnvelope,
-        ]) {
-            expect(() => parseQueryResult(JSON.stringify(result))).toThrow('unexpected result shape');
-        }
-    });
 });
 
 describe('visual input loader', () => {
@@ -197,6 +80,7 @@ describe('visual input loader', () => {
     it('loads raw DAX and JSON imports through one Vite server and prepares complete data', async () => {
         const projectRoot = await mkdtemp(resolve(tmpdir(), 'visual-input-'));
         const vite = await vi.importActual('vite');
+        const executeQuery = vi.fn().mockResolvedValue(queryTable);
         let loader;
         let server;
         try {
@@ -224,18 +108,7 @@ describe('visual input loader', () => {
                 vi.spyOn(server, 'close');
                 return server;
             });
-            loader = await createVisualInputLoader(projectRoot);
-            let payloadContents;
-            let payloadDirectoryExisted;
-            execFileAsync.mockImplementation(async (_command, args) => {
-                // Read the payload while it exists: the loader deletes it once the query returns.
-                const payloadPath = args[args.indexOf('--file') + 1];
-                payloadContents = await readFile(payloadPath, 'utf8');
-                payloadDirectoryExisted = existsSync(dirname(payloadPath));
-                const outputFile = args[args.indexOf('--output-file') + 1];
-                await writeFile(outputFile, JSON.stringify(queryResult), 'utf8');
-                return { stdout: JSON.stringify({ ...successEnvelope, outputFile }) };
-            });
+            loader = await createVisualInputLoader(projectRoot, { executeQuery });
             for (const params of [undefined, { period: 'monthly' }]) {
                 const result = await loader.load({ factoryPath: 'src/queries/revenue.ts', params });
                 expect(result).toEqual({
@@ -248,30 +121,10 @@ describe('visual input loader', () => {
             expect(createServer).toHaveBeenCalledExactlyOnceWith({
                 root: projectRoot, appType: 'custom', logLevel: 'error', server: { middlewareMode: true },
             });
-            const packageJson = fileURLToPath(import.meta.resolve('@microsoft/rayfin-cli/package.json'));
-            const cliEntry = resolve(dirname(packageJson), 'scripts', 'main');
-            const [command, args, options] = execFileAsync.mock.lastCall;
-            const payloadPath = args[args.indexOf('--file') + 1];
-            const resultPath = args[args.indexOf('--output-file') + 1];
-            expect(payloadPath).toMatch(/visual\.query\.json$/);
-            expect(resultPath).toMatch(/visual\.result\.json$/);
-            // The Rayfin CLI rejects --file paths outside the project, so the payload
-            // (and its result) live in a git-ignored directory inside the app and are removed afterwards.
-            for (const path of [payloadPath, resultPath]) {
-                expect(dirname(dirname(path))).toBe(projectRoot);
-                expect(basename(dirname(path))).toMatch(/^\.lyra-rayfin-/);
-            }
-            expect(payloadDirectoryExisted).toBe(true);
-            expect(existsSync(dirname(payloadPath))).toBe(false);
-            expect(command).toBe(process.execPath);
-            expect(args).toEqual(buildQueryCliArgs(cliEntry, 'monthly', payloadPath, resultPath));
-            expect(options).toEqual(
-                { cwd: projectRoot, maxBuffer: 20 * 1024 * 1024, timeout: 120_000, windowsHide: true },
-            );
-            // DAX comes from model-derived text, so it travels in the payload file, never in argv.
-            // The payload also caps the result at 1000 rows, which the connector truncates to silently.
-            expect(JSON.parse(payloadContents)).toEqual({ query: definition.query, resultSetRowCountLimit: 1000 });
-            expect(args).not.toContain(definition.query);
+            expect(executeQuery.mock.calls).toEqual([
+                ['sales', definition.query],
+                ['monthly', definition.query],
+            ]);
             expect(server.close).not.toHaveBeenCalled();
         } finally {
             await loader?.close();
@@ -280,98 +133,11 @@ describe('visual input loader', () => {
         expect(server.close).toHaveBeenCalledOnce();
     }, 30_000);
 
-    it('renders the full result file even when the CLI inlines a truncated preview', async () => {
-        mockServer();
-        const loader = await createVisualInputLoader();
-        try {
-            const fullTable = {
-                columns: queryTable.columns,
-                rows: [[1], [2], [3]],
-            };
-            // The CLI shrinks a large inline payload to a preview; the file stays whole,
-            // and a visual validated against the preview would be validated against the wrong data.
-            mockInvoke({ ...queryResult, table: fullTable }, {
-                ...successEnvelope,
-                output: { ...queryResult, table: { columns: queryTable.columns, rows: [[1]] } },
-                outputTruncated: true,
-                previewItems: 1,
-            });
-            const { queryTable: loaded, dataTable } = await loader.load({ factoryPath: 'revenue.ts' });
-            expect(loaded).toEqual(fullTable);
-            expect(dataTable.rows).toEqual([[1], [2], [3]]);
-        } finally {
-            await loader.close();
-        }
-    });
-
-    it('rejects a successful invoke that produced no result file', async () => {
-        mockServer();
-        const loader = await createVisualInputLoader();
-        try {
-            // The CLI reports the requested path but nothing was written there.
-            execFileAsync.mockImplementation(async (_command, args) => ({
-                stdout: JSON.stringify({ ...successEnvelope, outputFile: args[args.indexOf('--output-file') + 1] }),
-            }));
-            await expect(loader.load({ factoryPath: 'revenue.ts' }))
-                .rejects.toThrow('did not write a result file');
-        } finally {
-            await loader.close();
-        }
-    });
-
-    it('never accepts an inline preview in place of the requested result file', async () => {
-        mockServer();
-        const loader = await createVisualInputLoader();
-        try {
-            const failures = [
-                // A CLI that ignores --output-file and prints only the inline result.
-                [successEnvelope, 'did not report the requested --output-file'],
-                [{ ...successEnvelope, outputTruncated: true }, 'truncated preview without a result file'],
-                // An automatic spill under rayfin/.temp is not the file the loader asked for.
-                [
-                    { ...successEnvelope, outputFile: resolve('rayfin/.temp/invoke-results/spilled.json'), outputTruncated: true },
-                    'instead of the requested --output-file',
-                ],
-            ];
-            for (const [envelope, message] of failures) {
-                execFileAsync.mockImplementationOnce(async (_command, args) => {
-                    await writeFile(args[args.indexOf('--output-file') + 1], JSON.stringify(queryResult), 'utf8');
-                    return { stdout: JSON.stringify(envelope) };
-                });
-                await expect(loader.load({ factoryPath: 'revenue.ts' })).rejects.toThrow(message);
-            }
-        } finally {
-            await loader.close();
-        }
-    });
-
-    it('runs the Rayfin CLI only while it holds the Rayfin CLI lock', async () => {
-        const configRoot = await mkdtemp(resolve(tmpdir(), 'visual-input-lock-'));
-        const previous = process.env.RAYFIN_CONFIG_DIR;
-        process.env.RAYFIN_CONFIG_DIR = resolve(configRoot, 'rayfin');
-        mockServer();
-        const loader = await createVisualInputLoader(await mkdtemp(resolve(tmpdir(), 'visual-input-')));
-        try {
-            // Another Rayfin CLI command holds the lock: the visual's query must wait for it.
-            const release = await acquireRayfinCliLock();
-            const pending = loader.load({ factoryPath: 'src/queries/revenue.ts' });
-            await new Promise((resolveWait) => setTimeout(resolveWait, 300));
-            expect(execFileAsync).not.toHaveBeenCalled();
-            release();
-            await expect(pending).resolves.toMatchObject({ queryTable });
-            expect(execFileAsync).toHaveBeenCalledTimes(1);
-            expect(withRayfinCliLock).toHaveBeenCalledTimes(1);
-        } finally {
-            await loader.close();
-            if (previous === undefined) delete process.env.RAYFIN_CONFIG_DIR;
-            else process.env.RAYFIN_CONFIG_DIR = previous;
-            await rm(configRoot, { recursive: true, force: true });
-        }
-    });
     it('rejects paths outside the app and invalid definitions without executing a query', async () => {
         const server = mockServer({ makeVisual: () => ({ query: 'incomplete' }) });
         const projectRoot = resolve('test-app');
-        const loader = await createVisualInputLoader(projectRoot);
+        const executeQuery = vi.fn();
+        const loader = await createVisualInputLoader(projectRoot, { executeQuery });
         try {
             for (const factoryPath of ['../outside.ts', resolve(projectRoot, '../outside.ts')]) {
                 await expect(loader.load({ factoryPath })).rejects.toThrow('Factory must be inside the app directory');
@@ -379,7 +145,7 @@ describe('visual input loader', () => {
             expect(server.ssrLoadModule).toHaveBeenCalledTimes(1);
             await expect(loader.load({ factoryPath: 'src/queries/broken.ts' }))
                 .rejects.toThrow('must return { connection, query, columnMetadata, vegaLiteSpec }');
-            expect(execFileAsync).not.toHaveBeenCalled();
+            expect(executeQuery).not.toHaveBeenCalled();
         } finally {
             await loader.close();
         }
@@ -388,33 +154,13 @@ describe('visual input loader', () => {
 
     it('preserves query errors and remains usable and closable after load failures', async () => {
         const server = mockServer();
-        const loader = await createVisualInputLoader();
+        const executeQuery = vi.fn()
+            .mockRejectedValueOnce(new Error('Semantic model query failed: Bad DAX'))
+            .mockResolvedValueOnce(queryTable);
+        const loader = await createVisualInputLoader(undefined, { executeQuery });
         try {
-            const failures = [
-                [new Error('spawn failed'), 'spawn failed'],
-                [
-                    Object.assign(new Error(), {
-                        stdout: '{"status":"error","error":"Bad DAX"}',
-                    }),
-                    'Rayfin connector invoke failed: Bad DAX',
-                ],
-                [
-                    // A failed CLI process whose --json envelope carries the fix in `recovery`.
-                    Object.assign(new Error('Command failed'), {
-                        stdout: JSON.stringify({
-                            status: 'error',
-                            error: 'Not signed in.',
-                            recovery: 'Run `npx rayfin login`, then retry.',
-                        }),
-                    }),
-                    'Rayfin connector invoke failed: Not signed in. Run `npx rayfin login`, then retry.',
-                ],
-                [Object.assign(new Error(), { killed: true }), 'timed out after 120 seconds'],
-            ];
-            for (const [error, message] of failures) {
-                execFileAsync.mockRejectedValueOnce(error);
-                await expect(loader.load({ factoryPath: 'revenue.ts' })).rejects.toThrow(message);
-            }
+            await expect(loader.load({ factoryPath: 'revenue.ts' }))
+                .rejects.toThrow('Semantic model query failed: Bad DAX');
             await expect(loader.load({ factoryPath: 'revenue.ts' })).resolves.toMatchObject({ queryTable });
             expect(server.close).not.toHaveBeenCalled();
         } finally {

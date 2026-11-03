@@ -16,7 +16,7 @@ export default defineConfig(
   { ignores: ["dist", "node_modules"] },
   {
     extends: [eslint.configs.recommended],
-    files: ["scripts/visual-input*.mjs", "scripts/validate-visual*.mjs"],
+    files: ["scripts/visual-input*.mjs", "scripts/semantic-model-query*.mjs", "scripts/validate-visual*.mjs"],
     languageOptions: {
       globals: globals.node,
     },

@@ -58,7 +58,7 @@ These describe what the named-map mechanism renders. Producing the underlying ta
 }
 ```
 
-**Subset overlay on a dimmed baseline** — a full dataset drawn dim, a second dataset drawn bright on the same axis. Follow the visual-interactivity skill's [highlight queries](../../visual-interactivity/references/highlight-queries.md) for aligned subset queries, the layered spec, and selection-driven component wiring.
+**Subset overlay on a dimmed baseline** — a full dataset drawn dim, a second dataset drawn bright on the same axis. Follow the visual-interactivity skill's [highlight queries](../../visual-interactivity/references/highlight-queries.md) for aligned subset queries, rendering, and selection-driven component wiring.
 
 **Axis spine** — an invisible point mark over a table listing every member pins the axis domain so a sparse measure layer doesn't drop categories:
 

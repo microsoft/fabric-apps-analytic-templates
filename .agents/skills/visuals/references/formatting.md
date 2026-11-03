@@ -36,6 +36,9 @@ When choosing custom colors for data series, ensure adjacent colors remain easil
 ### Pie / Donut
 
 - Set `legend: null` on each field-based encoding that would produce a legend (usually `color`), unless the user explicitly requests one.
+- Keep the chart as a unit `arc` spec so `VegaVisual` can add managed category/value/percentage labels, leader lines, collision filtering, truncation, and full-text tooltips.
+- For a donut, set `innerRadius` on that same `arc` mark.
+- Add an `arc` + `text` layer only when the user explicitly requests custom labels. Layered specs own all label behavior and bypass the managed labels.
 
 ### Line Chart
 

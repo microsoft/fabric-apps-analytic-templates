@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@microsoft/fabric-datagrid": "5.1.0",
+    "@microsoft/fabric-interaction-manager": "1.0.0",
+    "@microsoft/fabric-slicers": "4.1.0",
     "@microsoft/fabric-visuals": "5.1.0",
     "@microsoft/fabric-visuals-core": "5.1.0",
     "@microsoft/fabric-visuals-extensibility": "5.1.0",
@@ -51,6 +53,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^4.3.1",
+    "apache-arrow": "^21.2.0",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -60,6 +63,7 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.38.0",
     "vite": "^8.3.4",
-    "vitest": "^4.1.12"
+    "vitest": "^4.1.12",
+    "yaml": "^2.9.0"
   }
 }
