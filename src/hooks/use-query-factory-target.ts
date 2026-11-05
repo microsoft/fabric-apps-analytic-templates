@@ -13,6 +13,7 @@ import type {
     InteractionTargetLoadContext,
     InteractionTargetLoader,
     ManagedQueryFactoryParams,
+    ManagedTargetLoadState,
 } from "@microsoft/fabric-interaction-manager";
 import { useManagedInteractionTarget } from "@microsoft/fabric-interaction-manager/react";
 import { executeQueryFactory } from "@/lib/query-factory";
@@ -35,10 +36,12 @@ export interface HighlightData {
 }
 
 /** A managed target load state whose data has the shape this hook's loader returns. */
-export type QueryFactoryTargetState<TData extends InteractionTargetData> =
-    | { readonly status: "loading" }
-    | { readonly status: "refreshing" | "ready"; readonly data: TData; readonly isCrossHighlightActive: boolean }
-    | { readonly status: "error"; readonly error: Error };
+export type QueryFactoryTargetState<TData extends InteractionTargetData> = {
+    // Preserve every manager state and its fields, narrowing only the loader's data shape.
+    [TState in ManagedTargetLoadState as TState["status"]]: TState extends { readonly data: InteractionTargetData }
+        ? Omit<TState, "data"> & { readonly data: TData }
+        : TState;
+}[ManagedTargetLoadState["status"]];
 
 /**
  * Loads a managed interaction target from a query factory. The hook passes the target's baseline

@@ -46,7 +46,7 @@ import type {
     InteractionTargetLoadContext,// { isCrossHighlightActive: boolean; compiledFilters: CompiledDaxFilters }
     CompiledDaxFilters,          // getFilters(mode: "baseline" | "highlight"): readonly string[]
     InteractionTargetData,       // DataTable | { all: DataTable; highlighted: DataTable }
-    ManagedTargetLoadState,      // { status: "loading" } | { status: "refreshing" | "ready"; data: InteractionTargetData; isCrossHighlightActive: boolean } | { status: "error"; error: Error }
+    ManagedTargetLoadState,      // loading | refreshing | ready | refresh-error (retained data + error) | error (no data)
     ManagedInteractionSource,    // { selections; selectableFields; onInteraction; error?: Error }
 } from "@microsoft/fabric-interaction-manager";
 
@@ -60,7 +60,7 @@ import {
 
 // Template helpers.
 import { useQueryFactoryTarget } from "@/hooks/use-query-factory-target";
-// useQueryFactoryTarget(targetId, factory, params, highlightAlignment?: HighlightAlignment) => ManagedTargetLoadState
+// useQueryFactoryTarget(targetId, factory, params, highlightAlignment?: HighlightAlignment) => QueryFactoryTargetState
 //   data is DataTable, or { all, highlighted } with highlightAlignment: { groupingFields; missingMeasureReplacementValues; plottedMeasureFields }
 import { executeQueryFactory, insertInteractionFilters } from "@/lib/query-factory";
 // executeQueryFactory(factory: { connection, query, columnMetadata }, bypassCache = false): Promise<DataTable>; for custom loaders
