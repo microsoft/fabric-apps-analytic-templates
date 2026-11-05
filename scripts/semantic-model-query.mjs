@@ -153,19 +153,10 @@ export function createQueryExecutor({
  * get an explanation instead, keyed by name.
  */
 async function loadSemanticModelConnectors(projectRoot, apiClient, fabricApi, getAuthorization) {
-    let config;
-    try {
-        config = parseYaml(await readFile(resolve(projectRoot, 'rayfin', 'rayfin.yml'), 'utf8'));
-    } catch (error) {
-        throw new Error(
-            `Could not read rayfin/rayfin.yml: ${error instanceof Error ? error.message : String(error)}`,
-        );
-    }
-
     const problems = new Map();
     const configs = {};
     const runtimes = {};
-    for (const connector of Array.isArray(config?.connectors) ? config.connectors : []) {
+    for (const connector of await readRayfinConnectors(projectRoot)) {
         if (typeof connector?.name !== 'string') {
             continue;
         }
@@ -177,8 +168,7 @@ async function loadSemanticModelConnectors(projectRoot, apiClient, fabricApi, ge
             );
             continue;
         }
-        const workspaceId = connector.config?.workspaceId;
-        const itemId = connector.config?.itemId;
+        const { workspaceId, itemId } = connector;
         const connectorTarget = workspaceId && itemId ? resolveTarget({ workspaceId, itemId }) : undefined;
         if (!connectorTarget) {
             problems.set(
@@ -201,6 +191,36 @@ async function loadSemanticModelConnectors(projectRoot, apiClient, fabricApi, ge
         clients: new Map(Object.keys(runtimes).map((name) => [name, api[name]])),
         problems,
     };
+}
+
+/**
+ * Returns the connectors `rayfin/rayfin.yml` declares, as the { name, type, workspaceId, itemId }
+ * that validate:visual uses. Like the Rayfin CLI, it also reads the legacy forms: a map keyed by
+ * connector name instead of a list, and `connector:` instead of `type:` (`type:` wins when an
+ * entry has both). The spec checks this against the installed Rayfin CLI's `connector list`.
+ */
+export async function readRayfinConnectors(projectRoot) {
+    let config;
+    try {
+        config = parseYaml(await readFile(resolve(projectRoot, 'rayfin', 'rayfin.yml'), 'utf8'));
+    } catch (error) {
+        throw new Error(
+            `Could not read rayfin/rayfin.yml: ${error instanceof Error ? error.message : String(error)}`,
+        );
+    }
+
+    let entries = config?.connectors;
+    if (!Array.isArray(entries)) {
+        entries = entries !== null && typeof entries === 'object'
+            ? Object.entries(entries).map(([name, entry]) => ({ name, ...entry }))
+            : [];
+    }
+    return entries.map((entry) => ({
+        name: entry?.name,
+        type: entry?.type ?? entry?.connector,
+        workspaceId: entry?.config?.workspaceId,
+        itemId: entry?.config?.itemId,
+    }));
 }
 
 /**
