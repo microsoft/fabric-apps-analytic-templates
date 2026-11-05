@@ -51,6 +51,7 @@ if (result.status === "error") return <div role="alert">{result.error.message}</
 
 return <>
     {source.error && <div role="alert">{source.error.message}</div>}
+    {result.status === "refresh-error" && <div role="alert">{result.error.message}</div>}
     <VegaVisual
         spec={vegaLiteSpec}
         data={result.data}
@@ -65,7 +66,9 @@ return <>
 ```
 
 Always pass `result.data` with `result.isCrossHighlightActive` from the same
-result; while refreshing, both still describe the displayed load.
+result; while refreshing or after a refresh error, both still describe the
+previous successful load. On `"refresh-error"`, keep the chart visible and show
+the error alongside it.
 
 With an active highlight, `VegaVisual` dims the baseline and draws the
 highlighted values on top; generated data labels stay on the baseline values.

@@ -128,7 +128,10 @@ not selectable:
 ```tsx
 if (result.status === "loading") return <div>Loading...</div>;
 if (result.status === "error") return <div role="alert">{result.error.message}</div>;
-return <DataGrid data={result.data} theme={theme} />;
+return <>
+    {result.status === "refresh-error" && <div role="alert">{result.error.message}</div>}
+    <DataGrid data={result.data} theme={theme} />
+</>;
 ```
 
 The hook runs factories through `executeQueryFactory`, which uses the same
@@ -140,8 +143,10 @@ its `cause`.
 `result.status` is `"loading"` when there is no data to show, including the
 load after an error; `"refreshing"` while a newer load runs, keeping the previous
 `data` and its `isCrossHighlightActive` together; `"ready"` with the latest load's
-data; or `"error"` when the latest load failed. A result from a superseded load is
-ignored but not cancelled.
+data; `"refresh-error"` when a newer load failed, retaining the previous successful
+`data` and `isCrossHighlightActive` and exposing the failure as `error`; or `"error"`
+when a load failed with no previous data. Keep the visual visible on `"refresh-error"`
+and show the error alongside it. A result from a superseded load is ignored but not cancelled.
 
 Invalid selections throw during compilation, and the load fails before any
 query runs. A failed query also fails the load. Surface `result.error`; do not
