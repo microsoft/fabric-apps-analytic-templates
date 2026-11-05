@@ -7,16 +7,19 @@
 
 // @vitest-environment node
 
+import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { promisify } from 'node:util';
 
 import { tableFromArrays, tableToIPC } from 'apache-arrow';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { acquireRayfinCliLock, withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
 import { getRayfinAuth } from '@microsoft/rayfin-cli/auth';
 
-import { createQueryExecutor, toQueryTable } from './semantic-model-query.mjs';
+import { createQueryExecutor, readRayfinConnectors, toQueryTable } from './semantic-model-query.mjs';
 
 // The saved Rayfin login is stood in for; the real Rayfin CLI lock is observed.
 vi.mock('@microsoft/rayfin-cli/auth', () => ({ getRayfinAuth: vi.fn(), loadAuthState: vi.fn() }));
@@ -41,6 +44,11 @@ const queryTable = {
     columns: [{ name: '[Value]', dataType: 'number' }],
     rows: [[1]],
 };
+
+const requireFromSpec = createRequire(import.meta.url);
+const rayfinCliPackage = requireFromSpec.resolve('@microsoft/rayfin-cli/package.json');
+/** The installed Rayfin CLI's `rayfin` command. */
+const rayfinCli = resolve(dirname(rayfinCliPackage), requireFromSpec(rayfinCliPackage).bin.rayfin);
 
 const temporaryDirectories = [];
 async function temporaryDirectory(prefix) {
@@ -85,6 +93,32 @@ function requestOf(fetch, call) {
         authorization: new Headers(init.headers).get('authorization'),
         body: JSON.parse(init.body),
     };
+}
+
+/**
+ * The connectors `rayfin connector list --json` reports for an app, run with the installed Rayfin
+ * CLI. It runs without telemetry and against an empty home and config directory, so the
+ * developer's Rayfin login is neither needed nor read.
+ */
+async function rayfinConnectorList(cwd) {
+    const home = await temporaryDirectory('semantic-model-query-rayfin-home-');
+    const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('RAYFIN_')));
+    const { stdout } = await promisify(execFile)(process.execPath, [rayfinCli, 'connector', 'list', '--json'], {
+        cwd,
+        env: {
+            ...env,
+            HOME: home,
+            USERPROFILE: home,
+            RAYFIN_CONFIG_DIR: resolve(home, '.rayfin'),
+            RAYFIN_TELEMETRY_OPTOUT: '1',
+        },
+    });
+    return JSON.parse(stdout).map((connector) => ({
+        name: connector.name,
+        type: connector.type,
+        workspaceId: connector.config?.workspaceId,
+        itemId: connector.config?.itemId,
+    }));
 }
 
 beforeEach(() => {
@@ -255,6 +289,69 @@ describe('semantic model queries', () => {
         })('sales', 'EVALUATE {1}')).rejects.toThrow('Could not read rayfin/rayfin.yml');
         expect(fetch).not.toHaveBeenCalled();
     });
+
+    it('reads rayfin.yml connectors as the installed Rayfin CLI does, including the legacy forms', async () => {
+        const otherWorkspaceId = '33333333-3333-4333-8333-333333333333';
+        const otherItemId = '44444444-4444-4444-8444-444444444444';
+        const sales = { name: 'sales', type: 'fabric-semanticmodel', workspaceId, itemId };
+        const fixtures = [
+            {
+                connectorLines: [
+                    // As `npx rayfin connector add` writes it (Rayfin CLI 1.36.1).
+                    ...salesConnector,
+                    '    auth:',
+                    '      type: delegated',
+                    '    version: "1"',
+                    '    operations:',
+                    '      - name: executeQuery',
+                    // Legacy `connector:` in place of `type:`.
+                    '  - name: legacy',
+                    '    connector: fabric-semanticmodel',
+                    '    config:',
+                    `      workspaceId: ${otherWorkspaceId}`,
+                    `      itemId: ${otherItemId}`,
+                    '  - name: orders',
+                    '    type: fabric-sqldatabase',
+                    '    config:',
+                    `      workspaceId: ${workspaceId}`,
+                    `      itemId: ${otherItemId}`,
+                ],
+                expected: [
+                    sales,
+                    { name: 'legacy', type: 'fabric-semanticmodel', workspaceId: otherWorkspaceId, itemId: otherItemId },
+                    { name: 'orders', type: 'fabric-sqldatabase', workspaceId, itemId: otherItemId },
+                ],
+            },
+            {
+                // Legacy map keyed by connector name.
+                connectorLines: [
+                    '  sales:',
+                    '    connector: fabric-semanticmodel',
+                    '    config:',
+                    `      workspaceId: ${workspaceId}`,
+                    `      itemId: ${itemId}`,
+                    '  migrated:',
+                    '    connector: fabric-sqldatabase',
+                    '    type: fabric-semanticmodel',
+                    '    config:',
+                    `      workspaceId: ${otherWorkspaceId}`,
+                    `      itemId: ${otherItemId}`,
+                ],
+                expected: [
+                    sales,
+                    { name: 'migrated', type: 'fabric-semanticmodel', workspaceId: otherWorkspaceId, itemId: otherItemId },
+                ],
+            },
+        ];
+
+        // Each Rayfin CLI run takes a few seconds to start, so the fixtures run at once.
+        await Promise.all(fixtures.map(async ({ connectorLines, expected }) => {
+            const app = await createApp(connectorLines);
+            const rayfinCliConnectors = await rayfinConnectorList(app);
+            expect(rayfinCliConnectors).toEqual(expected);
+            expect(await readRayfinConnectors(app)).toEqual(rayfinCliConnectors);
+        }));
+    }, 60_000);
 
     it('reads the saved Rayfin login silently, and only while holding the Rayfin CLI lock', async () => {
         const configRoot = await temporaryDirectory('semantic-model-query-lock-');
