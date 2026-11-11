@@ -44,10 +44,12 @@ EVALUATE
 ## Essential Syntax Rules
 
 ### Naming Conventions
+
 - **Columns**: `'Table'[Column]` (fully-qualified)
 - **Measures**: `[Measure]` (simple name, never qualify)
 
 ### DEFINE Rules
+
 ```dax
 // Correct — Single DEFINE, no commas
 DEFINE
@@ -70,6 +72,7 @@ DEFINE
 ### 1. EVALUATE Must Use Table Expressions
 
 Correct:
+
 ```dax
 EVALUATE 'Product'
 ORDER BY 'Product'[Name]
@@ -81,6 +84,7 @@ ORDER BY [Sales] DESC
 ```
 
 Wrong:
+
 ```dax
 EVALUATE [Total Sales]  // Scalar value, not a table
 EVALUATE SUMX('Sales', Sales[Amount])  // Scalar function, not a table
@@ -354,6 +358,7 @@ EVALUATE
 ## Syntax Mistakes
 
 ### SQL Keywords
+
 ```dax
 // Wrong
 SELECT * FROM Product WHERE Category = 'Electronics'
@@ -365,6 +370,7 @@ ORDER BY 'Product'[Name]
 ```
 
 ### Method Chaining
+
 ```dax
 // Wrong (like Python/JavaScript)
 Product.FILTER(...).SELECTCOLUMNS(...)
@@ -379,6 +385,7 @@ ORDER BY [Name]
 ```
 
 ### Scalar After EVALUATE
+
 ```dax
 // Wrong
 EVALUATE [Total Sales]

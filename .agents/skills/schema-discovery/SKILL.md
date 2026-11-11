@@ -1,12 +1,11 @@
 ---
-name: schema-query
+name: schema-discovery
 description: Ground DAX work in the cached semantic-model catalog, shipped measures, relationships, and explicit filter values.
 ---
 
 # Grounding semantic-model work
 
-**Prerequisite:** register the task's semantic model as a Rayfin connector first (AGENTS.md
-"Connector setup"):
+**Prerequisite:** register the task's semantic model as a Rayfin connector first:
 `npx rayfin connector add --type fabric-semanticmodel --name <name> --workspace-id <workspaceId> --item-id <itemId>`.
 Until then `query-schema` has no model to catalog and exits with that command.
 
@@ -63,6 +62,22 @@ rebuilt on demand; SQL queries read only that local copy.
 Do not hand-run exploratory `INFO.*` queries, read the catalog database directly, bypass the catalog
 with connector probes, or ask the user for metadata the catalog can answer.
 
+Check `catalog_status` and `catalog.md` for completeness before treating absence
+as evidence. A failed view differs from a successful zero-row view.
+An explicit `--refresh` retries now but never replaces a complete catalog with
+a build that loses a view. Empty Direct Lake statistics are expected; do not
+reconstruct them with expensive MIN/MAX/DISTINCTCOUNT queries.
+
+For long measure expressions, read bounded chunks with
+`SELECT substr([Expression], 1, 2000) ...`, then offsets 2001, 4001, etc.,
+using a focused WHERE clause until the expression is complete.
+An empty Expression on an object that should expose one means detail is unavailable,
+not proof that no logic exists. Search reports dropped terms; refine them rather
+than treating broad or punctuation-only searches as absence.
+For advanced metadata (calculation groups, calendars, UDFs) not in the five catalog
+views, follow [discovery-queries.md](references/discovery-queries.md) narrowly;
+do not use that exception to bypass ordinary cached discovery.
+
 ## Querying
 
 Every query starts with result metadata including `totalRows`, `returnedRows`, and `truncated`.
@@ -105,7 +120,8 @@ npx fabric-app-semantic-model-tools query-schema --search "requested concept com
 ```
 
 Every search token must appear somewhere in an entity's name, parent table, description, display
-folder, expression, or type. Exact and prefix name matches rank above descriptive or expression
+folder, expression, or type. If there are no all-term matches, model-wide absent terms may
+be dropped only with an explicit diagnostic in the result. Exact and prefix name matches rank above descriptive or expression
 matches, and shipped measures rank above columns at the same lexical relevance. After the global
 result identifies candidate tables, run a focused, untruncated SQL query for their measures,
 columns, descriptions, and expressions. Do not begin with a domain-prefix restriction: that can
@@ -148,17 +164,18 @@ full text. Do not treat a shortened expression as the measure's definition.
    call. An empty value-check result is the signal to correct that value once.
 6. Before another schema request, check whether an earlier result already answers the question.
    Never rerun an identical or equivalent schema query.
-7. Stop discovery only after every requested output field has an exact source mapping; the shipped
+7. Scope discovery to the current visual batch, reusing earlier mappings. Stop only after
+   every output field in that batch has an exact source mapping; the shipped
    measures, grouping columns, relationship path, and filter grain are grounded; every explicit
    filter value is bound to its exact column (its value comes from the request and, if needed, is
    confirmed by the value check in step 5, not by more discovery); every qualifier in the request
-   is bound to a filter, including implied ones (step 5); and no mapping depends on a truncated
-   result.
+   relevant to that batch is bound to a filter, including implied ones (step 5); and no mapping
+   depends on a truncated result.
 8. Write and validate the DAX with the [dax-authoring](../dax-authoring/SKILL.md) skill.
 
 ## DAX plan and semantic grain
 
-Before writing DAX, form a compact plan containing:
+Before writing DAX for the current visual batch, form a compact plan containing:
 
 - every requested output field;
 - the exact source for each field: a fully qualified grouping/label column, an exact shipped
@@ -171,7 +188,7 @@ Before writing DAX, form a compact plan containing:
 Keep this plan in your working notes; do not write it to a file. `run-dax-query` does not know the
 plan, so compare the columns, row count, and warnings it reports with the plan yourself.
 
-Do not generate DAX until every requested business value is bound to an exact shipped measure and
+Do not generate DAX until every business value needed by this visual is bound to an exact shipped measure and
 every label/group is bound to an exact column. If exhaustive, untruncated measure discovery
 establishes that no suitable measure exists, record both the missing measure and the catalog
 evidence before declaring a different source. Partial measure results are not evidence that a

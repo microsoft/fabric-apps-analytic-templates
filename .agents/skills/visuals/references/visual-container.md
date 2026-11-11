@@ -24,7 +24,7 @@ Full set: `VisualContainerCapabilities` under *Visual Container Framing* in `nod
 Use `containerRootClassName` for grid spans, flex placement, margins, and whole-frame sizing. Use `containerClassName` for the **inner card surface**: background, border, radius, and padding. A renderer's own `className` still styles the visual inside the card.
 
 ```tsx
-<section className="grid gap-(--grid-gap) lg:grid-cols-3">
+<section className="grid gap-4 lg:grid-cols-3">
     <VegaVisual
         spec={vegaLiteSpec}
         data={dataTable}

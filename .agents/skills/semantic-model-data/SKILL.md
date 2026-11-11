@@ -14,6 +14,17 @@ The app runs DAX against a semantic model through a connector registered in
 `rayfin/rayfin.yml` (see `AGENTS.md`). The app sends only the query; the
 connector's `workspaceId` and `itemId` are injected server-side.
 
+## Data-app setup and validation
+
+The template already installs the connector packages and wires its synchronous,
+build-time-configured client in `src/lib/rayfin-client.ts`. Do not replace it.
+Registration through `npx rayfin connector add` regenerates the CLI-owned part
+of `src/lib/connectors.ts`; do not hand-edit it or reinstall packages it prints.
+AGENTS.md owns connector setup and discovery-before-source-reading policy.
+
+Run `npm run lint`, `npm test`, and `npm run build:fabric` for the template.
+Its live visual validation is described in the visuals skill and AGENTS.md.
+
 ## Quick Start
 
 Use the hook. It caches and never throws: every failure, whether the connector
@@ -82,12 +93,21 @@ the DAX so every column is present in the first row.
 
 ### Caching
 
-The connectors client does not cache. Caching is an app-level concern and
-lives in `src/lib/query-cache.ts`, above the query hooks, so one store serves
-every source kind. Use `useSemanticModelQuery` and you get it for free.
+The connectors client does not cache. The existing session-lifetime app cache
+in `src/lib/query-cache.ts` is shared across sources: an LRU of 256 results,
+deep-frozen and coalesced, without TTL or identity persistence.
+Successful results and `query` errors are cached; `api`, `network`, `overflow`,
+and `unknown` failures are not. Preserve that behavior.
 
-Successful results and DAX (`query`) errors are cached. `api`, `network`,
-`overflow`, and `unknown` errors are not, since retrying may succeed.
+The hook accepts `bypassCache` and returns
+`CachedQueryResult<SemanticModelQueryResult>` with `fromCache` and `cachedAt`.
+`refetch()` bypasses the cache. `clearQueryCache()` clears what the next query
+reads, but does not re-render mounted hooks: use `refetch()` to read now.
+Never mutate cached rows; copy before sorting.
+
+Managed targets call the app's `executeQueryFactory` through
+`useQueryFactoryTarget`. Preserve `querySemanticModel` and its shared cache/error
+normalization; custom loaders may pass `bypassCache` to `executeQueryFactory`.
 
 ### Error Categories
 

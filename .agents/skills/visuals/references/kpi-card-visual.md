@@ -11,7 +11,7 @@ without adding a second frame; configure that outer container instead.
 
 Refer to the installed package's public declarations for available component APIs.
 This reference covers the KPI-card patterns and constraints needed when building
-the template.
+an app.
 
 Import `KpiCard` and its types from `@microsoft/fabric-visuals`.
 
@@ -20,28 +20,28 @@ and data preparation, and [DataTable](data-table.md) for column metadata and row
 
 ### Validation
 
-1. **Query correctness:** Use the
+1. **Query correctness:** For semantic-model-backed cards, use the
    [DAX validation gates](../../dax-authoring/SKILL.md#testing--iteration) to check every
    callout/change, chart, and reference query, including metric-only cards.
 2. **Factory contract:** Callout/change and custom-region-only query factories
    return `{ connection, query, columnMetadata }`. They do not need a Vega-Lite
    `.json` file or `vegaLiteSpec`; do not invent a dummy spec to satisfy a tool.
    A factory supplying an embedded Vega chart also returns `vegaLiteSpec`.
-3. **Embedded Vega charts:** Check that the chart renders the query results using
-   `npm run validate:visual -- <chart-query-factory.ts> [factory-params-json]`
-   for each relevant chart parameter variant. This validator renders Vega only;
+3. **Embedded Vega charts:** Follow the consuming app's visual validation
+   instructions for each relevant chart parameter variant and confirm the chart
+   renders the query results. A Vega-only validator does not cover the whole card;
    do not run it on spec-less KPI factories or treat its success as validation
    of the callout or custom chart/reference renderers.
-4. **Complete card:** After wiring the component, verify rendered metric, change,
-   and reference text and formats against the validated live results for every
-   included region. Cover null-to-em-dash and real-zero rendering in component
-   tests using representative fixtures matching the actual query column shape.
-   Query success and prop/spec-shape assertions alone do not validate card output.
+4. **Optional testing follow-up:** When the user requests component tests, cover
+   rendered metric, change, and reference text and formats for every included
+   region, including null-to-em-dash and real-zero rendering. Use representative
+   fixtures matching the actual query column shape. Query success and
+   prop/spec-shape assertions alone do not validate card output.
 
 ### Callout and formatting
 
 Only `theme` and `callout.metric` are required. Obtain metric values and formats
-from successful live query results; the host owns query-state handling.
+from validated data; the host owns query-state handling.
 
 Map the validated metric cell `table.rows[rowIndex][columnIndex]` to
 `metricValue` and its matching `table.columns[columnIndex].format` to
@@ -50,10 +50,9 @@ assuming the first cell is the metric; preserve null values and check the value
 type before passing it to `callout.metric`.
 
 ```tsx
-import { KpiCard } from "@microsoft/fabric-visuals";
-import { useThemeContext } from "@/hooks/theme.context";
+import { KpiCard, useCssTheme } from "@microsoft/fabric-visuals";
 
-const { theme } = useThemeContext();
+const theme = useCssTheme();
 
 <KpiCard
     header={{ title: "Revenue", subtitle: "Current period" }}
@@ -131,9 +130,10 @@ callout and chart; references do not have to summarize or align with the chart.
 
 ### Theming and accessibility
 
-Pass the resolved `theme` from `useThemeContext()` to both `KpiCard` and its
-`chart.theme`. Custom renderers receive that same theme; use it or inherited card
-tokens instead of introducing an independent palette.
+Pass the consuming app's resolved `theme` to both `KpiCard` and its `chart.theme`.
+The shared example uses `useCssTheme()`; follow the host's theme policy.
+Custom renderers receive that same theme; use it or inherited card tokens instead
+of introducing an independent palette.
 
 - Callout typography uses `--font-numeric`, `--text-600` (24px default), and
   `--font-weight-bold`, not container-title typography. Scope token overrides and

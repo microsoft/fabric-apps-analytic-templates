@@ -7,8 +7,9 @@
 
 import { EmptyStatePreview } from "./EmptyStatePreview";
 
-// Replace `<EmptyStatePreview />` with your dashboard, remove the import
-// above, and delete `EmptyStatePreview.tsx` and `empty-state-preview-world-map.png`.
+// Replace the starter content early with a simple app shell.
+// Mount validated visuals in batches as they become ready.
+// Then remove this import, EmptyStatePreview.tsx, and empty-state-preview-world-map.png.
 function App() {
     return <EmptyStatePreview />;
 }

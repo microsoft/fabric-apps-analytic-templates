@@ -13,7 +13,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
-  { ignores: ["dist", "node_modules"] },
+  { ignores: ["dist", "node_modules", ".agents/**"] },
   {
     extends: [eslint.configs.recommended],
     files: ["scripts/visual-input*.mjs", "scripts/semantic-model-query*.mjs", "scripts/validate-visual*.mjs"],

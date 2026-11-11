@@ -1,6 +1,6 @@
 # Runtime Query Factories
 
-Parameterize factories only when runtime state changes DAX or a Vega-Lite spec; otherwise keep them parameterless. Follow the template's [query-factory conventions](../../../../AGENTS.md#query-and-spec-organization) for file names, metadata, barrel exports, and validation.
+Parameterize factories only when runtime state changes DAX or a Vega-Lite spec; otherwise keep them parameterless. Follow the host template's query-factory conventions for file names, metadata, barrel exports, and validation. Configure sources and targets using [Interaction Manager](interaction-manager.md).
 
 ## Factory contract
 
@@ -72,7 +72,7 @@ ORDER BY 'Product'[Category]
 ```
 
 Keep the DAX in the factory's `.dax` file and insert the filters with the
-template's tested marker helper:
+shipped, tested marker helper:
 
 ```ts
 import type { ManagedQueryFactoryParams } from "@microsoft/fabric-interaction-manager";
@@ -103,11 +103,9 @@ queries with an outer filter context, see [advanced query shapes](advanced-query
 
 ## Load the target
 
-`useQueryFactoryTarget` passes the manager's baseline filters to the factory as
-`interactionFilters` and returns the target's load state with one `DataTable`.
-It loads on mount, when the factory's other inputs change, and when interactions
-that affect this target change. Here `"details"` is a registered target loading
-the `categoryChart` factory above:
+`useQueryFactoryTarget` loads a registered target through its query factory.
+It passes the manager's baseline filters as `interactionFilters` and returns
+a load state containing one `DataTable` when data is available:
 
 ```tsx
 import { useQueryFactoryTarget } from "@/hooks/use-query-factory-target";
@@ -117,40 +115,55 @@ const result = useQueryFactoryTarget("details", categoryChart, {});
 ```
 
 Pass the factory's other inputs as the third argument, such as `{ granularity }`
-for a `revenueTrend` factory that also accepts `ManagedQueryFactoryParams`. The hook compares them by their JSON contents, so an inline object
-reloads only when its values change.
+for a `revenueTrend` factory. The hook compares these inputs by their JSON
+serialization; recreating an inline object with the same serialized contents
+does not itself trigger a reload.
 
-Register a target-only component, such as a measures-only grid, with
-`selectableFields: []` and render it without source props. If you pass
-`onInteraction`, its clicks are still published and the manager rejects them as
-not selectable:
+The target loads on mount and reloads when its factory inputs or interactions
+affecting it change. Keep the factory function stable unless changing it is
+intended to reload the target.
 
-```tsx
-if (result.status === "loading") return <div>Loading...</div>;
-if (result.status === "error") return <div role="alert">{result.error.message}</div>;
-return <>
-    {result.status === "refresh-error" && <div role="alert">{result.error.message}</div>}
-    <DataGrid data={result.data} theme={theme} />
-</>;
-```
+### Query execution and load states
 
-The hook runs factories through `executeQueryFactory`, which uses the same
-Rayfin execution, error normalization, and session-lifetime cache as
-`useSemanticModelQuery`, then calls `toDataTable` with the factory metadata.
-A failed query's error carries the query error, including its `category`, as
-its `cause`.
+The hook uses `useManagedInteractionTarget` to manage loading and retain
+successful results. Its loader executes factories through `executeQueryFactory`,
+which shares the Rayfin execution path and error normalization with
+`useSemanticModelQuery`, then converts successful query tables using the
+factory's column metadata. Execution caching is template-specific:
+the data-app shares its existing session cache, while Universal App is uncached.
 
-`result.status` is `"loading"` when there is no data to show, including the
-load after an error; `"refreshing"` while a newer load runs, keeping the previous
-`data` and its `isCrossHighlightActive` together; `"ready"` with the latest load's
-data; `"refresh-error"` when a newer load failed, retaining the previous successful
-`data` and `isCrossHighlightActive` and exposing the failure as `error`; or `"error"`
-when a load failed with no previous data. Keep the visual visible on `"refresh-error"`
-and show the error alongside it. A result from a superseded load is ignored but not cancelled.
+`result.status` is `"loading"` while a load is pending with no previous data;
+`"refreshing"` while a replacement load is pending, keeping the previous `data`
+and `isCrossHighlightActive` together; `"ready"` with the latest successful
+load's data; `"refresh-error"` when a load failed, retaining the previous
+successful data and highlight flag and exposing the failure as `error`; or
+`"error"` when a load failed with no previous data. A result from a superseded
+load is ignored but not cancelled.
+
+Query failures appear as `result.error` in the `"error"` or `"refresh-error"`
+state. These errors preserve the query category, code, available HTTP status
+and workload details, diagnostic text, and original cause. Handle the returned
+state; query failures do not throw from `useQueryFactoryTarget`.
 
 Invalid selections throw during compilation, and the load fails before any
 query runs. A failed query also fails the load. Surface `result.error`; do not
 retry without the interaction filters.
+
+### Present loading and failures
+
+Handle each result state using the app's loading and error UI. On
+`"refresh-error"`, keep the previous visual visible and show the failure
+alongside it. Explicitly identify retained rows, highlights and totals as stale,
+never silently present them as the latest result. With no previous data, show a
+load error instead. Preserve accepted selections.
+
+### Target-only components
+
+A target-only component, such as a measures-only grid, should declare
+`selectableFields: []` and omit source interaction props. Components that also
+publish selections should follow the skill's source-binding guidance.
+
+### Highlighting
 
 A highlight-capable target also loads a highlighted subset and returns
 `{ all, highlighted }`; see [highlight queries](highlight-queries.md).

@@ -19,11 +19,11 @@
     "validate:visual": "node scripts/validate-visual.mjs"
   },
   "dependencies": {
-    "@microsoft/fabric-datagrid": "5.2.0",
-    "@microsoft/fabric-interaction-manager": "1.1.0",
-    "@microsoft/fabric-slicers": "4.2.0",
-    "@microsoft/fabric-visuals": "5.2.0",
-    "@microsoft/fabric-visuals-core": "5.2.0",
+    "@microsoft/fabric-datagrid": "5.3.0",
+    "@microsoft/fabric-interaction-manager": "1.2.0",
+    "@microsoft/fabric-slicers": "4.3.0",
+    "@microsoft/fabric-visuals": "5.3.0",
+    "@microsoft/fabric-visuals-core": "5.3.0",
     "@microsoft/fabric-visuals-extensibility": "5.2.0",
     "@microsoft/rayfin-auth-provider-fabric": "^1.36.2",
     "@microsoft/rayfin-client": "^1.36.2",
@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
-    "@microsoft/fabric-app-semantic-model-tools": "1.1.1",
+    "@microsoft/fabric-app-semantic-model-tools": "1.2.0",
     "@microsoft/rayfin-cli": "^1.36.2",
     "@microsoft/rayfin-mcp": "^1.36.2",
     "@testing-library/jest-dom": "^6.9.1",
