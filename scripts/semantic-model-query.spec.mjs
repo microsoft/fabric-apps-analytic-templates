@@ -17,7 +17,7 @@ import { promisify } from 'node:util';
 import { tableFromArrays, tableToIPC } from 'apache-arrow';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { acquireRayfinCliLock, withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
-import { getRayfinAuth } from '@microsoft/rayfin-cli/auth';
+import { getRayfinAuth } from '@microsoft/rayfin-cli/_internal/auth';
 
 import { createQueryExecutor, readRayfinConnectors, toQueryTable } from './semantic-model-query.mjs';
 

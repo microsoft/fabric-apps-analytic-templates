@@ -169,7 +169,7 @@ for tests, follow these conventions:
 ## Critical rules
 
 1. **Never use mock, fake, or hardcoded data.** All data must come from a real source.
-2. **Never persist user data beyond the session or store credentials/PII.** Fetch on demand from the real source; the only allowed in-memory data store is the shipped session-lifetime app query cache in `src/lib/query-cache.ts`.
+2. **Never store credentials/PII.** Fetch on demand from the real source; the only allowed in-memory data store is the shipped session-lifetime app query cache in `src/lib/query-cache.ts`.
 3. **Do not assume or silently add a data source.** Confirm the source with the user and never supplement it without explicit consent.
 4. **Never guess query result schema.** Run the query first with `npx fabric-app-semantic-model-tools run-dax-query --dax <file.dax> --alias <connector>` and use its exact output names as `columnMetadata` keys.
 5. **Do not ask the user to describe the schema.** Query the cached catalog with `npx fabric-app-semantic-model-tools query-schema`.

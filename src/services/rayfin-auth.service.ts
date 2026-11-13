@@ -5,8 +5,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import RayfinClient from "@microsoft/rayfin-client";
-import type { OpaqueSession } from "@microsoft/rayfin-auth";
+import type { Auth, OpaqueSession } from "@microsoft/rayfin-auth";
 import {
     ensureSignedInWithFabric,
     initEmbeddedAuth as sdkInitEmbeddedAuth,
@@ -78,7 +77,7 @@ export function bootstrapAuth(): IAuthService {
  */
 class RayfinAuthService implements IAuthService {
     constructor(
-        private readonly client: RayfinClient,
+        private readonly client: { readonly auth: Auth },
         private readonly fabricOptions: FabricAuthOptions,
     ) {}
 

@@ -5,24 +5,37 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import { ConnectorsRayfinClient } from "@microsoft/rayfin-client";
-import type { EntitySchema } from "@microsoft/rayfin-data";
-import type { FunctionsSchema } from "@microsoft/rayfin-functions";
+import { browserSession } from "@microsoft/rayfin-auth";
+import { RayfinClient } from "@microsoft/rayfin-client";
+import { connectorsService } from "@microsoft/rayfin-connectors";
+import { dataService } from "@microsoft/rayfin-data";
+import { functionsService } from "@microsoft/rayfin-functions";
 import type { AppConnectorsSchema } from "@/lib/connectors";
 import { connectorConfigs, connectorRuntimes } from "@/lib/connectors";
 
 /**
- * The app's Rayfin client type. `ConnectorsRayfinClient` extends `RayfinClient`
- * with a typed `connectors` surface, so everything the plain client offers is
- * still available.
+ * Infer the app's client type from its registered services so their typed
+ * surfaces are preserved.
  */
-export type AppRayfinClient = ConnectorsRayfinClient<
-    EntitySchema,
-    FunctionsSchema,
-    AppConnectorsSchema
->;
+export type AppRayfinClient = ReturnType<typeof createClient>;
 
 let _client: AppRayfinClient | undefined;
+
+function createClient(baseUrl: string, publishableKey: string) {
+    return RayfinClient.create({
+        baseUrl,
+        publishableKey,
+        auth: browserSession({ storage: true }),
+        services: {
+            data: dataService(),
+            functions: functionsService(),
+            connectors: connectorsService<AppConnectorsSchema>({
+                configs: connectorConfigs,
+                runtime: connectorRuntimes,
+            }),
+        },
+    });
+}
 
 /**
  * Returns the pre-configured RayfinClient singleton.
@@ -45,15 +58,7 @@ export function getRayfinClient(): AppRayfinClient {
             throw new Error(`Missing required env vars for creating rayfin client - run 'npx rayfin up'`);
         }
 
-        _client = new ConnectorsRayfinClient(
-            {
-                baseUrl: apiUrl,
-                publishableKey,
-                authStorage: true,
-                connectors: connectorConfigs,
-            },
-            connectorRuntimes,
-        );
+        _client = createClient(apiUrl, publishableKey);
     }
 
     return _client;
