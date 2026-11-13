@@ -30,10 +30,10 @@ export interface HighlightAlignment {
 }
 
 /** The baseline and aligned highlighted datasets of a highlight-capable target. */
-export interface HighlightData {
+export type HighlightData = {
     readonly all: DataTable;
     readonly highlighted: DataTable;
-}
+};
 
 /** A managed target load state whose data has the shape this hook's loader returns. */
 export type QueryFactoryTargetState<TData extends InteractionTargetData> = {

@@ -17,7 +17,7 @@ description: >
 | DAX Query Structure & Syntax | [dax-query-patterns.md: Query Structure](./references/dax-query-patterns.md#query-structure) | DEFINE / EVALUATE / ORDER BY / START AT |
 | DAX Query Key Components | [dax-query-patterns.md: Key Components](./references/dax-query-patterns.md#key-components) | DEFINE VAR, DEFINE MEASURE, table expressions |
 | DAX Query Worked Examples | [dax-query-patterns.md: Common Patterns](./references/dax-query-patterns.md#common-patterns) | 11 annotated examples from simple aggregation to cross-table joins |
-| DAX Query Anti-Patterns | [dax-query-patterns.md: Anti-Patterns](./references/dax-query-patterns.md#anti-patterns) | What to avoid in DAX queries |
+| DAX Query Syntax Mistakes | [dax-query-patterns.md: Syntax Mistakes](./references/dax-query-patterns.md#syntax-mistakes) | SQL keywords, method chaining, and scalar EVALUATE |
 | CALCULATE & CALCULATETABLE | [dax-core-reference.md: CALCULATE & CALCULATETABLE](./references/dax-core-reference.md#calculate--calculatetable) | Context transition, filter types, boolean restrictions, common patterns |
 | SUMMARIZECOLUMNS | [dax-core-reference.md: SUMMARIZECOLUMNS](./references/dax-core-reference.md#summarizecolumns) | Argument order, auto-blank elimination, filter args, vs SUMMARIZE |
 | ALL & ALLEXCEPT | [dax-core-reference.md: ALL & ALLEXCEPT](./references/dax-core-reference.md#all--allexcept) | CALCULATE modifier vs table function; percentage patterns |
@@ -30,7 +30,7 @@ description: >
 | YTD / QTD / MTD | [dax-time-intelligence.md: Period-to-Date](./references/dax-time-intelligence.md#period-to-date) | TOTALYTD, DATESYTD, DATESINPERIOD patterns |
 | Year-over-Year / Period Comparisons | [dax-time-intelligence.md: Period Comparisons](./references/dax-time-intelligence.md#period-comparisons) | SAMEPERIODLASTYEAR, DATEADD, PARALLELPERIOD |
 | Rolling Windows | [dax-time-intelligence.md: Rolling Windows](./references/dax-time-intelligence.md#rolling-windows) | DATESINPERIOD rolling 12-month patterns |
-| Opening/Closing Balances | [dax-time-intelligence.md: Balances](./references/dax-time-intelligence.md#balances) | Semi-additive measures, LASTDATE, LASTNONBLANK |
+| Opening/Closing Balances | [dax-time-intelligence.md: Opening/Closing Balance Functions](./references/dax-time-intelligence.md#openingclosing-balance-functions) | Opening and closing balance function reference |
 | TI in DAX Queries (Critical Rules) | [dax-time-intelligence.md: Critical Rules for TI in Queries](./references/dax-time-intelligence.md#critical-rules-for-ti-in-dax-queries) | CALCULATETABLE + TREATAS pattern for query context |
 | TI Common Mistakes | [dax-time-intelligence.md: Common Mistakes](./references/dax-time-intelligence.md#common-mistakes) | Missing date table, wrong granularity, fiscal calendar |
 | Testing & Iteration | [SKILL.md: Testing & Iteration](#testing--iteration) | Execute → inspect → fix → re-test workflow |
@@ -38,8 +38,11 @@ description: >
 ## Must / Prefer / Avoid
 
 ### Must
+
 - Always test generated DAX before using it in app code. Execute each planned `.dax` file once
-  through `npx fabric-app-semantic-model-tools run-dax-query` and compare its report with the schema-query plan
+  through `npx fabric-app-semantic-model-tools run-dax-query` and compare its report with the schema-discovery plan.
+  Batch independent queries for the current visual batch in one call (up to four files);
+  do not turn incremental UI assembly into one CLI invocation per visual.
 - Run DAX through `run-dax-query`, not `npx rayfin connector invoke`; `run-dax-query` runs Rayfin CLI
   calls one at a time.
 - Use fully-qualified `'Table'[Column]` for column references
@@ -49,18 +52,22 @@ description: >
   the schema workflow established that no suitable shipped measure exists. Never replace a shipped
   measure with raw `SUM`, `COUNT`, `COUNTROWS`, `AVERAGE`, `DISTINCTCOUNT`, or a local
   approximation
-- Generate DAX from the completed schema-query plan; do not rediscover or substitute model objects
-- Do not implement the UI until the final DAX has executed successfully and its output passes the
-  planned shape and semantic validation gates, with every warning resolved or explained by the
-  request
+- Generate DAX from the completed schema-discovery plan; do not rediscover or substitute model objects
+- Before using a query's output in a data-backed visual, execute that query successfully and
+  pass its planned shape and semantic validation gates, resolving or explaining warnings.
+  This gate applies to the current visual batch, not layout scaffolding or the whole app.
+  Mount passing visuals as the batch becomes ready; do not wait for unrelated queries. 
+- Follow the consuming template's instructions for sequencing UI that does not depend on DAX results.
 
 ### Prefer
+
 - SUMMARIZECOLUMNS as the primary grouping function for queries
 - TREATAS for filter arguments in SUMMARIZECOLUMNS
 - Variables (VAR) to improve readability and avoid repeated calculations
 - Shipped measures from measure-heavy KPI tables
 
 ### Avoid
+
 - SQL keywords (SELECT, WHERE, HAVING, etc.) within DAX expressions
 - EVALUATE with scalar functions directly (wrap in ROW or table function)
 
@@ -82,6 +89,7 @@ description: >
 ### Inline Examples
 
 **Simple filtered aggregation:**
+
 ```dax
 // Total sales for red products
 EVALUATE
@@ -89,6 +97,7 @@ EVALUATE
 ```
 
 **Multi-filter grouping with SUMMARIZECOLUMNS:**
+
 ```dax
 DEFINE
   VAR _Filter1 = TREATAS({"Consumer Electronics"}, 'Product'[Category])
@@ -106,6 +115,7 @@ EVALUATE
 ```
 
 **TopN with filtering:**
+
 ```dax
 DEFINE
   VAR _Filter = TREATAS({"Red", "Black"}, 'Product'[Color])
@@ -131,7 +141,7 @@ Consult [dax-time-intelligence.md](./references/dax-time-intelligence.md) whenev
 
 ## Testing & Iteration
 
-1. Use the completed schema-query plan: exact shipped measures, grouping columns, filters,
+1. Use the completed schema-discovery plan: exact shipped measures, grouping columns, filters,
    relationship path, expected columns, and row shape
 2. Author one `EVALUATE` for each distinct query the plan requires, and execute each final query
    once with `run-dax-query` (see [Query Execution](#query-execution))
@@ -170,6 +180,9 @@ Preserve the selected candidate by editing the validated query rather than regen
 - On timeout, narrow filters, reduce grouping cardinality, apply `TOPN`, or simplify only the
   failing planned query. Never retry the same query unchanged.
 - Preserve successful batched outputs. Correct only failed or semantically inconsistent files.
+- Reuse grounded model mappings across visuals. A new spec, layout, or metadata alias does not
+  require another schema discovery or `run-dax-query` call for unchanged DAX and source context.
+  Run the consuming app's visual validator for affected specs/metadata.
 
 ## Query Execution
 
@@ -200,7 +213,7 @@ A failed query keeps its own entry beside the successful ones, and the call exit
 the failed queries. Missing, malformed, unreadable, or overflowed results never pass, and input or
 read failures also exit nonzero; an error message alone does not show that a query ran. An
 `overflow` result has no table; see
-[semantic-model-data](../semantic-model-data/SKILL.md#error-categories).
+[analytics](../analytics/SKILL.md#runtime-contract).
 
 **Row count:** a query returns every row unless you bound it. Bound it with the aggregation the plan
 calls for, and use `TOPN(...)` only when the request asks for a ranked subset or to bound a query
@@ -208,12 +221,17 @@ that timed out. `--limit <n>` is a guard, not a cap: validation fails when more 
 back.
 
 
+`resultSetRowCountLimit` silently truncates, so exactly that many returned rows may
+be incomplete. `withValidatedRowLimit` drops values that are not positive integers,
+leaving no explicit limit on the request. This SDK option is separate from the
+tools command's `--limit` validation guard and numeric `overflow` errors.
+
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
 | A connector query fails because no Power BI token can be acquired without a sign-in prompt | Follow the recovery text printed with the error; re-running `npx rayfin login` does not fix it. |
-| `query-schema` cannot resolve the connector, or a query names a connector that `rayfin/rayfin.yml` does not declare | Run `npx rayfin connector list` to check declared connectors, then `npx rayfin connector add` to register the intended model (see `AGENTS.md`) |
+| `query-schema` cannot resolve the connector, or a query names a connector that `rayfin.yml` does not declare | Run `npx rayfin connector list --json` to check declared connectors, then `npx rayfin connector add` to register the intended model |
 | DAX syntax errors | Consult [dax-core-reference.md](./references/dax-core-reference.md) — check reserved keywords, quoting rules, EVALUATE/scalar mistakes |
 | Unexpected query results | Check filter context, relationship direction, BLANK handling in [dax-core-reference.md](./references/dax-core-reference.md#blank-semantics) |
 | Time intelligence returns wrong values | Check date table prerequisites and critical rules in [dax-time-intelligence.md](./references/dax-time-intelligence.md) |

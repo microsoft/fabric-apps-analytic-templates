@@ -26,7 +26,11 @@
 
 Each key becomes a named entry in `spec.datasets`, and any layer binds to one with `"data": { "name": "<key>" }`. This lets a single spec draw marks from more than one table — a layered chart where each layer reads a different dataset.
 
-Prefer a single `DataTable` for the common case: one table feeding one set of marks. Slicer filtering, hover highlighting within the same visual, and per-row coloring are all single-`DataTable` scenarios. A named map is the mechanism whenever the spec needs to bind separate layers to separate tables.
+Prefer a single `DataTable` for the common case: one table feeding one set of marks.
+For managed cross-highlighting, pass aligned `{ all, highlighted }` tables and
+`isCrossHighlightActive` with the spec unchanged; follow
+[highlight queries](../../visual-interactivity/references/highlight-queries.md).
+A named map is for intentionally custom layers that bind separate tables.
 
 ## How layers align
 
@@ -58,7 +62,28 @@ These describe what the named-map mechanism renders. Producing the underlying ta
 }
 ```
 
-**Subset overlay on a dimmed baseline** — a full dataset drawn dim, a second dataset drawn bright on the same axis. Follow the visual-interactivity skill's [highlight queries](../../visual-interactivity/references/highlight-queries.md) for aligned subset queries, rendering, and selection-driven component wiring.
+**Subset overlay on a dimmed baseline** — a full dataset drawn dim, a second dataset drawn bright on the same axis. Both layers encode the same fields; the bright layer's marks appear only at the axis keys its rows supply:
+
+```json
+{
+  "layer": [
+    { "data": { "name": "all" }, "mark": { "type": "bar", "opacity": 0.3 },
+      "encoding": { "x": { "field": "Category" }, "y": { "field": "Sales", "type": "quantitative" } } },
+    { "data": { "name": "highlighted" }, "mark": "bar",
+      "encoding": { "x": { "field": "Category" }, "y": { "field": "Sales", "type": "quantitative" } } }
+  ]
+}
+```
+
+Swap the second table to change what the bright layer shows; pass only `{ all }` to render the baseline alone.
+
+```tsx
+<VegaVisual
+  spec={vegaLiteSpec}
+  data={highlighted ? { all, highlighted } : { all }}
+  theme={theme}
+/>
+```
 
 **Axis spine** — an invisible point mark over a table listing every member pins the axis domain so a sparse measure layer doesn't drop categories:
 
@@ -79,9 +104,35 @@ These describe what the named-map mechanism renders. Producing the underlying ta
 
 ## Native selection — no named map needed
 
-When an interaction stays within a single visual (clicking a bar to dim the others, hovering a point to emphasize matches), Vega-Lite's native selection with a conditional encoding handles it from one table — no named map, no second dataset. Follow the visual-interactivity skill's [native selections](../../visual-interactivity/references/native-selections.md) guidance.
+When an interaction stays within a single visual (clicking a bar to dim the others, hovering a point to emphasize matches), Vega-Lite's native selection with a conditional encoding handles it from one table — no named map, no second dataset.
+
+Follow [native selections](../../visual-interactivity/references/native-selections.md)
+for selection ownership and coordinated interaction guidance.
+
+```json
+{
+  "params": [{ "name": "sel", "select": { "type": "point", "fields": ["Category"] } }],
+  "mark": "bar",
+  "encoding": {
+    "x": { "field": "Category", "type": "nominal" },
+    "y": { "field": "Sales", "type": "quantitative" },
+    "opacity": {
+      "condition": { "param": "sel", "value": 1, "empty": false },
+      "value": 0.3
+    }
+  }
+}
+```
 
 ## Caveats
 
+- **A selection param belongs to one mark.** In a `layer` with more than one
+  entry, declare it inside the entry that owns the interaction rather than at the
+  top level, or scope it with `"views": ["<child name>"]`. Vega-Lite compiles a
+  top-level selection into every branch, and the duplicate signal names throw
+  when Vega parses the result — the card shows a stack trace where the chart
+  should be. A single-entry `layer` is fine, and so is a top-level selection on
+  `concat`, `facet` or `repeat`. Check the rendered app and follow the template's
+  validator coverage rules; static and live validators have different contracts.
 - Auto-injected transforms (stacked data labels, crosshair tooltips) run only on the single-`DataTable` path. With a named map, the spec is compiled as written.
 - Each named dataset resolves its own column metadata, so the same column name can carry different formats across tables.

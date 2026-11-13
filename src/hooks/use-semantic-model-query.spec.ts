@@ -12,6 +12,7 @@ import { NetworkError, SdkError, type WorkloadFailure } from "@microsoft/rayfin-
 import type { QueryError, SemanticModelQueryResult } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { useSemanticModelQuery, clearQueryCache } from "@/hooks/use-semantic-model-query";
 import { clearCachedQueries, configureQueryCache } from "@/lib/query-cache";
+import { isThrottlingError } from "@/lib/semantic-model-errors";
 
 // Mock the Rayfin client module so tests run offline. The mock stands in for
 // the connector client, so it yields what `executeQuery` resolves to: a
@@ -201,12 +202,12 @@ describe("useSemanticModelQuery", () => {
             error: {
                 category: "unknown",
                 code: "UNKNOWN_CONNECTOR",
-                message: "Unknown connector \"missingModel\". Connectors are declared in rayfin.yml and added with `npx rayfin connector add`.",
+                message: "No connector named \"missingModel\". Check that the name matches rayfin/rayfin.yml, or add it with `npx rayfin connector add`.",
             },
             requestId: "",
         });
         expect(result.current.error?.message).toBe(
-            "Unknown connector \"missingModel\". Connectors are declared in rayfin.yml and added with `npx rayfin connector add`.",
+            "No connector named \"missingModel\". Check that the name matches rayfin/rayfin.yml, or add it with `npx rayfin connector add`.",
         );
         expect(errorOf(result.current.data).cause).toBe(thrown);
     });
@@ -275,6 +276,27 @@ describe("useSemanticModelQuery", () => {
         functionName: "executeQuery",
         status: "Failed",
     };
+
+    it.each([429, 500])("preserves structured throttle diagnostics on the convenience error for HTTP %s", async (httpStatus: number): Promise<void> => {
+        const throttleWorkload: WorkloadFailure = {
+            errorCode: "WorkloadException", subErrorCode: "TooManyRequests", status: "Failed",
+        };
+        const thrown: NetworkError = Object.assign(new NetworkError("Invocation failed", httpStatus, "InvocationFailure"), { workload: throttleWorkload });
+        mockExecuteQuery.mockRejectedValue(thrown);
+
+        const { result } = renderHook(() =>
+            useSemanticModelQuery({ connection: "model", query: "EVALUATE ROW()" }),
+        );
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(result.current.error).toMatchObject({
+            category: "api", code: "InvocationFailure", httpStatus, workload: throttleWorkload, cause: thrown,
+        });
+        expect(isThrottlingError(result.current.error)).toBe(true);
+        expect(result.current.data).toMatchObject({
+            status: "error", error: { httpStatus, workload: throttleWorkload, cause: thrown },
+        });
+    });
 
     it.each([
         {

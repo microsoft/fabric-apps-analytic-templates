@@ -18,13 +18,13 @@ Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll 
 |---|---|
 | Semantic measures (SUM, DISTINCTCOUNT, etc.) | DAX |
 | Fixed model/page filters | DAX |
-| User-controlled visual filters | [visual-interactivity](../visual-interactivity/SKILL.md) |
+| User-controlled visual filters | [visual-interactivity](../visual-interactivity/SKILL.md) + DAX query factories |
 | Grouping grain (SUMMARIZECOLUMNS) | DAX |
 | Time intelligence (YTD, YoY) | DAX |
 | TopN / payload reduction | DAX |
 | Deterministic row ordering (ORDER BY) | DAX (for debugging — not presentation sort) |
 | Partitioning a flagged result table | TypeScript |
-| Coordinating separate query results | TypeScript (one hook call per result table) |
+| Coordinating separate query results | Managed target loaders for interacting visuals; matched result sets for independent tables |
 | Server-provided grand totals (preferred, supports all aggregation types) | DAX + TypeScript row partitioning |
 | DataGrid-computed grand totals | DataGrid (alternative only for additive `sum` values or a count of fetched leaf rows) |
 | Filling dimension gaps | TypeScript (stitch dimension list into sparse results) |
@@ -48,7 +48,7 @@ Aggregate in DAX to the visual's grain — never fetch lower-grain rows to roll 
 ### Prefer
 
 - `SUMMARIZECOLUMNS` for grouped aggregation — it also drops BLANK-measure rows, keeping payloads small
-- DAX's natural column names (`'Table'[Column]`, `[Measure]`) as `columnMetadata` **keys**, mapped to a bracket-free `name` and a human-readable `displayName`
+- Exact raw output column names (`Table[Column]`, `[Measure]`) as `columnMetadata` **keys**, mapped to a bracket-free `name` and a human-readable `displayName`
 - Raw typed values from DAX — format via `columnMetadata.format` or Vega-Lite, never `FORMAT()`
 - Model-defined format strings (from `INFO.VIEW.MEASURES()`) over invented ones
 - Multiple lightweight queries for independently shaped datasets; one flagged rollup query for a DataGrid body and grand total
@@ -101,7 +101,7 @@ Read these when working on a specific topic:
 
 ## Integration with Sibling Skills
 
-- **[schema-query](../schema-query/SKILL.md)** — Query exact tables, columns, measures, and relationships before writing queries.
+- **[schema-discovery](../schema-discovery/SKILL.md)** — Query exact tables, columns, measures, and relationships before writing queries.
 - **[dax-authoring](../dax-authoring/SKILL.md)** — DAX syntax, query patterns, and testing workflow. Apply this skill's principles when deciding what DAX should compute.
 - **[visuals](../visuals/SKILL.md)** — Vega-Lite specs and DataGrid configuration. Push formatting and labels into specs, not DAX.
-- **[visual-interactivity](../visual-interactivity/SKILL.md)** — Visual selections, cross-filtering, cross-highlighting, filter-aware grid totals, and runtime query parameters.
+- **[visual-interactivity](../visual-interactivity/SKILL.md)** — Managed selections, complete compiled DAX filters, target loading, aligned highlights, filter-aware totals and refresh/error states.

@@ -44,6 +44,7 @@ CALCULATETABLE(<TableExpression> [, <Filter1> [, <Filter2> [, ...]]])
 ### Filter Argument Types
 
 #### 1. Boolean Conditions (Compact Syntax)
+
 ```dax
 // Single column filter
 CALCULATE([Sales Amount], 'Product'[Color] = "Red")
@@ -53,6 +54,7 @@ CALCULATE([Sales Amount], 'Product'[Color] IN {"Red", "Blue"})
 ```
 
 #### 2. Table Expressions
+
 ```dax
 // Explicit table filter (equivalent to boolean)
 CALCULATE(
@@ -87,6 +89,7 @@ Yearly Avg = AVERAGEX(
 ```
 
 Every measure reference implicitly wraps in CALCULATE, triggering context transition:
+
 ```dax
 // These are equivalent inside an iterator:
 AVERAGEX(VALUES('Date'[Year]), CALCULATE([Sales Amount])) // Explicit CALCULATE is unnecessary
@@ -96,6 +99,7 @@ AVERAGEX(VALUES('Date'[Year]), [Sales Amount])  // Implicit CALCULATE
 ### Common Patterns
 
 #### Percentage of Total
+
 ```dax
 % of Total = DIVIDE(
     [Sales Amount],
@@ -104,6 +108,7 @@ AVERAGEX(VALUES('Date'[Year]), [Sales Amount])  // Implicit CALCULATE
 ```
 
 #### Conditional Aggregation
+
 ```dax
 High Value Sales = CALCULATE(
     [Sales Amount],
@@ -112,12 +117,14 @@ High Value Sales = CALCULATE(
 ```
 
 #### Time Intelligence
+
 ```dax
 Sales YTD = CALCULATE([Sales Amount], DATESYTD('Date'[Date]))
 Sales PY = CALCULATE([Sales Amount], SAMEPERIODLASTYEAR('Date'[Date]))
 ```
 
 #### Multiple Filters (AND logic)
+
 ```dax
 Red Electronics = CALCULATE(
     [Sales Amount],
@@ -127,6 +134,7 @@ Red Electronics = CALCULATE(
 ```
 
 #### KEEPFILTERS - Intersect Filters
+
 ```dax
 // Without KEEPFILTERS: overrides existing Color filter (always Red+Blue)
 Red Blue Sales = CALCULATE(
@@ -142,6 +150,7 @@ Red Blue Keepfilters = CALCULATE(
 ```
 
 #### Using Relationship Modifiers
+
 ```dax
 Delivered Sales = CALCULATE(
     [Sales Amount],
@@ -152,6 +161,7 @@ Delivered Sales = CALCULATE(
 ### Boolean Filter Restrictions
 
 #### Cannot Reference Multiple Tables
+
 ```dax
 // Wrong - references both Product and Customer
 CALCULATE([Sales], 'Product'[Color] = "Red" && 'Customer'[Region] = "West")
@@ -165,6 +175,7 @@ CALCULATE(
 ```
 
 #### Cannot Use Measures Directly
+
 ```dax
 // Wrong - measure in boolean filter
 CALCULATE([Sales], 'Product'[Price] > [Avg Price])
@@ -293,6 +304,7 @@ SUMMARIZECOLUMNS(
 ### Common Usage Patterns
 
 #### Basic Grouping with Measures
+
 ```dax
 EVALUATE
     SUMMARIZECOLUMNS(
@@ -305,6 +317,7 @@ ORDER BY 'Calendar'[Year] DESC, [Total Sales] DESC
 ```
 
 #### With TREATAS Filter
+
 ```dax
 DEFINE
     VAR _CategoryFilter = TREATAS({"Consumer Electronics"}, 'Product'[Category])
@@ -319,6 +332,7 @@ ORDER BY 'Calendar'[Year] DESC, 'Calendar'[Month] DESC
 ```
 
 #### With FILTER + ALL for Ranges
+
 ```dax
 DEFINE
     VAR _YearFilter = FILTER(ALL('Calendar'[Year]), 'Calendar'[Year] >= 2022 && 'Calendar'[Year] <= 2023)
@@ -328,6 +342,7 @@ ORDER BY 'Calendar'[Year] DESC
 ```
 
 #### Top N with SUMMARIZECOLUMNS
+
 ```dax
 DEFINE
     VAR _ProductSales = SUMMARIZECOLUMNS('Product'[Name], "Sales", [Total Sales])
@@ -381,6 +396,7 @@ When used as a filter argument in CALCULATE:
 - `REMOVEFILTERS` is functionally equivalent in this context
 
 **Percentage of Total:**
+
 ```dax
 Sales % of Total = DIVIDE(
     SUM(Sales[Amount]),
@@ -389,11 +405,13 @@ Sales % of Total = DIVIDE(
 ```
 
 **Remove Filter on Specific Column(s):**
+
 ```dax
 Sales All Colors = CALCULATE([Sales Amount], ALL(Product[Color]))
 ```
 
 **Grand Total Across All Dimensions:**
+
 ```dax
 Database Grand Total = CALCULATE([Sales Amount], ALL())
 ```
@@ -412,16 +430,19 @@ When used as a table expression:
 - Can be used with iterators (SUMX, FILTER, etc.)
 
 **Ranking Pattern:**
+
 ```dax
 Product Rank = RANKX(ALL(Product[Product Name]), [Sales Amount])
 ```
 
 **Iteration Over All Values:**
+
 ```dax
 Max Sales Any Product = MAXX(ALL(Product), [Sales Amount])
 ```
 
 **Count All Values:**
+
 ```dax
 Total Product Count = COUNTROWS(ALL(Product))
 ```
@@ -453,6 +474,7 @@ When used as a filter argument in CALCULATE:
 - Retains filters ONLY on the listed columns
 
 **Percentage of Parent Group:**
+
 ```dax
 % of Continent =
 VAR CurrentSales = [Sales Amount]
@@ -464,6 +486,7 @@ RETURN DIVIDE(CurrentSales, ContinentSales)
 ```
 
 **Subtotal Pattern:**
+
 ```dax
 Category Subtotal = CALCULATE(
     [Sales Amount],
@@ -510,11 +533,13 @@ Due to auto-exist semantics, only rows where the value combinations actually exi
 ### Examples
 
 #### Simple Column Mapping
+
 ```dax
 CALCULATE([Sales Amount], TREATAS({"Red", "Blue"}, Product[Color]))
 ```
 
 #### Multi-Column Mapping
+
 ```dax
 CALCULATETABLE(
     Sales,
@@ -538,6 +563,7 @@ EVALUATE
 ```
 
 #### Filtering with Dynamic Values
+
 ```dax
 DEFINE
     VAR _TopCategories = TOPN(3, VALUES('Product'[Category]), [Total Sales])
@@ -547,6 +573,7 @@ EVALUATE
 ```
 
 #### Virtual Relationships
+
 ```dax
 CALCULATE(
     [Total Sales],
@@ -555,6 +582,7 @@ CALCULATE(
 ```
 
 ### Key Points
+
 - Creates a virtual relationship for filtering purposes
 - Values that don't exist in the target column are automatically filtered out (auto-exist)
 - Most commonly used with SUMMARIZECOLUMNS as a filter argument
@@ -681,6 +709,7 @@ If `[Sales]` is `SUM('Sales'[Amount]) + 0`: The `+ 0` converts BLANK to 0, makin
 ### BLANK Propagation Rules
 
 **Operations where BLANK propagates (returns BLANK):**
+
 ```dax
 BLANK() * 4            // BLANK (multiplication)
 BLANK() / 4            // BLANK (division)
@@ -691,6 +720,7 @@ BLANK() - BLANK()      // BLANK (both operands blank)
 ```
 
 **Operations where BLANK converts to 0 or empty string:**
+
 ```dax
 BLANK() + 4            // 4 (BLANK converted to 0)
 BLANK() - 4            // -4 (BLANK converted to 0)
@@ -701,7 +731,9 @@ BLANK() & "A"          // "A" (BLANK converted to empty string)
 ### Comparison Semantics
 
 #### Standard Equality (=) — Equivalent Values
+
 BLANK is equivalent to 0, empty string "", FALSE, DateTime origin:
+
 ```dax
 BLANK() = 0            // TRUE
 BLANK() = ""           // TRUE
@@ -710,7 +742,9 @@ BLANK() = BLANK()      // TRUE
 ```
 
 #### Strict Equality (==), IN, SWITCH — Exact Match
+
 Only identical values match:
+
 ```dax
 BLANK() == 0           // FALSE
 BLANK() == ""          // FALSE
@@ -720,7 +754,9 @@ BLANK() IN {BLANK()}   // TRUE
 ```
 
 #### Comparison Operators
+
 BLANK is treated as 0:
+
 ```dax
 BLANK() < 1            // TRUE (0 < 1)
 BLANK() > -1           // TRUE (0 > -1)
@@ -729,6 +765,7 @@ BLANK() > -1           // TRUE (0 > -1)
 ### Testing for BLANK
 
 Use ISBLANK (not equality to BLANK):
+
 ```dax
 // Wrong: matches BLANK, 0, and ""
 IF([Value] = BLANK(), "is blank", "has value")
@@ -741,6 +778,7 @@ IF([Value] == BLANK(), "is blank", "has value")
 ### SWITCH Behavior
 
 SWITCH uses exact match semantics (like == and IN):
+
 ```dax
 SWITCH(BLANK(),
     0, "zero",           // Not matched
@@ -759,6 +797,7 @@ DIVIDE(BLANK(), BLANK())  // BLANK
 ```
 
 **Anti-Pattern Warning:**
+
 ```dax
 // BAD: Can cause result space explosion in SUMMARIZECOLUMNS queries
 DIVIDE([Sales], [Quantity], 0)
@@ -768,6 +807,7 @@ DIVIDE([Sales], [Quantity])
 ```
 
 ### COALESCE for Default Values
+
 ```dax
 COALESCE([Measure], 0)  // Returns 0 if measure is BLANK
 COALESCE([Value1], [Value2], [Value3], "default")  // First non-BLANK
