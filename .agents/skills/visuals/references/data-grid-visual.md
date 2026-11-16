@@ -51,18 +51,18 @@ Use DataGrid-computed totals only for additive sums or a count of fetched leaf r
 
 - **Provided mode:** Pass an authoritative `DataTable` through `grandTotals.data`; DataGrid bypasses body-column `defaultAggregation`.
 - **Computed mode:** Pass `grandTotals` without `data` and set `defaultAggregation` on body columns. `data: undefined` enters this path but does not render a totals row by itself; no row renders when no column declares a supported aggregation. DataGrid currently honors only `"sum"` and `"count"`.
-- **Filtering:** DataGrid filtering is enabled by default, but provided totals do not update automatically. Keep body rows available for local filtering and pass `onFilterChange` selections through `ROLLUPADDISSUBTOTAL`'s grand-total-only filter before re-querying. Follow the visual-interactivity skill's [filter-aware grid totals](../../visual-interactivity/references/filter-aware-grid-totals.md) guidance.
+- **Filtering:** DataGrid filtering is enabled by default, but provided totals do not update automatically. Keep body rows available for local filtering and pass `onFilterChange` selections through `ROLLUPADDISSUBTOTAL`'s grand-total-only filter before re-querying. Follow [filter-aware grid totals](../../visual-interactivity/references/filter-aware-grid-totals.md).
 - **Mapping and formatting:** Provided values map by `ColumnDef.name` and use the provided table's column formats.
 - **Label:** DataGrid displays `Total` by default. To override it, set the provided totals row's first leaf-column value; DataGrid displays that value instead.
 
 ### Theming
 
-Pass the global theme from `useThemeContext()` to the `theme` prop so the component updates automatically in light and dark modes:
+Pass the resolved CSS theme to the `theme` prop so the component updates automatically in light and dark modes:
 
 ```tsx
-import { useThemeContext } from "@/hooks/theme.context";
+import { useCssTheme } from "@microsoft/fabric-visuals";
 
-const { theme } = useThemeContext();
+const theme = useCssTheme();
 
 <DataGrid data={dataTable} theme={theme} />
 ```

@@ -37,7 +37,7 @@ Native form controls can diverge from token-driven styles unless normalized. Kee
 1. Ensure base styles set `font-family: inherit` for `select`, `input`, `textarea`, and `button`.
 2. When combining font size and text color in `cn()`, prefer explicit length syntax for font size (such as `text-[length:var(--text-300)]`) to avoid merge conflicts.
 3. Set explicit, consistent control heights (for example around 36px) so inputs, selects, and buttons align.
-4. After composing a toolbar/form row, visually verify matching font family, font size, text color, and height across controls.
+4. Use matching font family, font size, text color, and height across controls in a toolbar/form row.
 
 ### Overflow + rounded corners
 

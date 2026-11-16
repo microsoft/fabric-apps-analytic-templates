@@ -9,7 +9,12 @@ import { describe, it, expect } from "vitest";
 import { splitRollupDataTable, toDataTable, toRollupDataTables } from "@/lib/to-data-table";
 import type { ColumnMetadataMap } from "@/lib/to-data-table";
 import type { ColumnDef, DataTable } from "@microsoft/fabric-visuals-core";
-import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
+import type { QueryTableLike } from "@/lib/to-data-table";
+
+type QueryTable = {
+    columns: { name: string; dataType: string }[];
+    rows: QueryTableLike["rows"];
+};
 
 describe("toDataTable", () => {
     const queryTable: QueryTable = {
@@ -137,12 +142,14 @@ describe("toRollupDataTables", () => {
     });
 
     it("requires at least one rollup flag column", () => {
+        const queryTable: QueryTable = {
+            columns: [{ name: "[Revenue]", dataType: "number" }],
+            rows: [[100]],
+        };
+
         expect(() =>
             toRollupDataTables(
-                {
-                    columns: [{ name: "[Revenue]", dataType: "number" }],
-                    rows: [[100]],
-                },
+                queryTable,
                 columnMetadata,
                 { rollupFlagColumns: [] },
             ),
@@ -206,15 +213,17 @@ describe("toRollupDataTables", () => {
     });
 
     it("removes rollup flag columns from an empty result that keeps its schema", () => {
+        const queryTable: QueryTable = {
+            columns: [
+                { name: "Region[Name]", dataType: "string" },
+                { name: "[IsGrandTotal]", dataType: "boolean" },
+                { name: "[Revenue]", dataType: "number" },
+            ],
+            rows: [],
+        };
+
         const result = toRollupDataTables(
-            {
-                columns: [
-                    { name: "Region[Name]", dataType: "string" },
-                    { name: "[IsGrandTotal]", dataType: "boolean" },
-                    { name: "[Revenue]", dataType: "number" },
-                ],
-                rows: [],
-            },
+            queryTable,
             columnMetadata,
             { rollupFlagColumns: ["[IsGrandTotal]"] },
         );
@@ -251,15 +260,17 @@ describe("toRollupDataTables", () => {
     });
 
     it("requires boolean rollup flag values", () => {
+        const queryTable: QueryTable = {
+            columns: [
+                { name: "[IsGrandTotal]", dataType: "boolean" },
+                { name: "[Revenue]", dataType: "number" },
+            ],
+            rows: [[null, 100]],
+        };
+
         expect(() =>
             toRollupDataTables(
-                {
-                    columns: [
-                        { name: "[IsGrandTotal]", dataType: "boolean" },
-                        { name: "[Revenue]", dataType: "number" },
-                    ],
-                    rows: [[null, 100]],
-                },
+                queryTable,
                 columnMetadata,
                 { rollupFlagColumns: ["[IsGrandTotal]"] },
             ),

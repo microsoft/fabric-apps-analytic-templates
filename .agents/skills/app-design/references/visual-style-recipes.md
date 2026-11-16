@@ -23,7 +23,7 @@ See the `formatting.md` reference for the full list of CSS variables and how to 
 
 ### Chart typography alignment
 
-Validate that chart text styling fits the app's current theme and typography direction. If chart labels, titles, legends, or axis text feel disconnected from the rest of the UI, update chart font family, weight, and size settings so they align with the app's token-driven type system.
+Align chart text styling with the app's current theme and typography direction. Use chart font family, weight, and size settings consistent with the app's token-driven type system.
 
 - Keep chart font family aligned with the primary app font choice.
 - Adjust axis labels, legend labels, and chart titles to match the visual density of the layout.
@@ -57,7 +57,7 @@ Do not wrap `<VegaVisual>` in a fixed-height container.
 
 ### `minHeight` vs `height` for chart containers
 
-Validate that containers in the height chain provide a definite height when charts rely on `h-full`.
+Give containers in the height chain a definite height when charts rely on `h-full`.
 
 - `height` creates a definite height and allows `h-full` chart wrappers to resolve correctly.
 - `minHeight` alone does not create a definite height for flex/grid children and can lead to squished charts in standalone sections.

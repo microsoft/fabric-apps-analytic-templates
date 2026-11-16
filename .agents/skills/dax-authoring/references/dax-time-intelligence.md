@@ -297,6 +297,7 @@ Sales YTD = CALCULATE([Total Sales], DATESYTD('Date'[Date]))
 ## Complete Function Reference
 
 ### Period-to-Date Functions
+
 | Function | Description |
 |----------|-------------|
 | DATESYTD | Year-to-date dates |
@@ -305,6 +306,7 @@ Sales YTD = CALCULATE([Total Sales], DATESYTD('Date'[Date]))
 | DATESWTD | Week-to-date dates (calendar-based) |
 
 ### Total-to-Date Functions
+
 | Function | Description |
 |----------|-------------|
 | TOTALYTD | Year-to-date total |
@@ -313,6 +315,7 @@ Sales YTD = CALCULATE([Total Sales], DATESYTD('Date'[Date]))
 | TOTALWTD | Week-to-date total (calendar-based) |
 
 ### Period Shifting Functions
+
 | Function | Description |
 |----------|-------------|
 | DATEADD | Flexible shift by days, months, quarters, years |
@@ -320,12 +323,14 @@ Sales YTD = CALCULATE([Total Sales], DATESYTD('Date'[Date]))
 | PARALLELPERIOD | Complete parallel period |
 
 ### Opening/Closing Balance Functions
+
 | Function | Description |
 |----------|-------------|
 | OPENINGBALANCEMONTH / QUARTER / YEAR | Value at period start |
 | CLOSINGBALANCEMONTH / QUARTER / YEAR | Value at period end |
 
 ### Period Navigation Functions
+
 | Function | Description |
 |----------|-------------|
 | FIRSTDATE / LASTDATE | First/last date in context |
@@ -335,6 +340,7 @@ Sales YTD = CALCULATE([Total Sales], DATESYTD('Date'[Date]))
 | NEXTDAY / MONTH / QUARTER / YEAR | Next period dates |
 
 ### Custom Range Functions
+
 | Function | Description |
 |----------|-------------|
 | DATESINPERIOD | Dates within interval from start date |

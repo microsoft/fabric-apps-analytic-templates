@@ -124,10 +124,16 @@ describe("useQueryFactoryTarget", () => {
     });
 
     it("returns the baseline as both datasets when no highlight is active", async () => {
-        renderHook(() => useQueryFactoryTarget("salesChart", salesByCategory, { region: "West" }, alignment));
+        const { result, rerender } = renderHook(() => useQueryFactoryTarget("salesChart", salesByCategory, { region: "West" }, alignment));
 
         const all: DataTable = tableFor(salesByCategory({ region: "West", interactionFilters: ["baseline filter"] }));
-        await expect(latestLoader()(contextFor(false))).resolves.toEqual({ all, highlighted: all });
+        const loaded: InteractionTargetData = await latestLoader()(contextFor(false));
+        useManagedInteractionTarget.mockReturnValue({ status: "ready", data: loaded, isCrossHighlightActive: false });
+        rerender();
+        const state: QueryFactoryTargetState<HighlightData> = result.current;
+        if (state.status === "loading" || state.status === "error") throw new Error("Expected loaded highlight data");
+        const data: Record<string, DataTable> = state.data;
+        expect(data).toEqual({ all, highlighted: all });
         expect(executeQueryFactory).toHaveBeenCalledTimes(1);
         expect(createHighlightData).not.toHaveBeenCalled();
     });
@@ -143,6 +149,25 @@ describe("useQueryFactoryTarget", () => {
             { Value: 0 },
             ["Value"],
         );
+    });
+
+    it("returns real aligned highlight rows, preserving baseline keys missing from the selection", async () => {
+        const actual = await vi.importActual<typeof import("@microsoft/fabric-interaction-manager")>(
+            "@microsoft/fabric-interaction-manager",
+        );
+        createHighlightData.mockImplementation(actual.createHighlightData);
+        const all: DataTable = {
+            columns: [{ name: "Category" }, { name: "Value" }],
+            rows: [["Bikes", 100], ["Accessories", 50]],
+        };
+        const subset: DataTable = { columns: all.columns, rows: [["Accessories", 20]] };
+        executeQueryFactory.mockResolvedValueOnce(all).mockResolvedValueOnce(subset);
+        renderHook(() => useQueryFactoryTarget("salesChart", salesByCategory, { region: "West" }, alignment));
+
+        await expect(latestLoader()(contextFor(true))).resolves.toEqual({
+            all,
+            highlighted: { columns: all.columns, rows: [["Bikes", 0], ["Accessories", 20]] },
+        });
     });
 
     it("keeps the loader while inline inputs have the same contents", () => {

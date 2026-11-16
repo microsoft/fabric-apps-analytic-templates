@@ -9,6 +9,7 @@ import type { DataTable } from "@microsoft/fabric-visuals-core";
 import { querySemanticModel } from "@/hooks/use-semantic-model-query";
 import { toDataTable } from "./to-data-table";
 import type { ColumnMetadataMap } from "./to-data-table";
+import { SemanticModelQueryError } from "./semantic-model-errors";
 
 /** The query portion of the existing { connection, query, columnMetadata, vegaLiteSpec } factory result. */
 export interface DataQuery {
@@ -19,13 +20,13 @@ export interface DataQuery {
 
 /**
  * Executes a factory through the same cache and error normalization as useSemanticModelQuery.
- * Failed results throw so a managed target loader publishes an error state. The thrown error's
- * `cause` is the query error, which carries its `category`, `code`, and any `workload` detail.
+ * Failed results throw with structured query/transport diagnostics so a managed target loader
+ * publishes an error state. The original thrown cause, or returned query error, is preserved.
  */
 export async function executeQueryFactory(factory: DataQuery, bypassCache = false): Promise<DataTable> {
     const result = await querySemanticModel(factory.connection, factory.query, bypassCache);
     if (result.status === "error") {
-        throw new Error(result.error.message, { cause: result.error });
+        throw new SemanticModelQueryError(result.error);
     }
 
     return toDataTable(result.table, factory.columnMetadata);

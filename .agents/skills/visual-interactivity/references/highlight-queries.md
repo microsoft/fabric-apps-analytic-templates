@@ -45,13 +45,11 @@ provider and call all hooks before early returns:
 ```tsx
 const source = useManagedInteractionSource("categoryChart");
 const result = useQueryFactoryTarget("categoryChart", categoryChart, {}, categoryAlignment);
-const { theme } = useThemeContext();
 if (result.status === "loading") return <div>Loading...</div>;
 if (result.status === "error") return <div role="alert">{result.error.message}</div>;
 
 return <>
     {source.error && <div role="alert">{source.error.message}</div>}
-    {result.status === "refresh-error" && <div role="alert">{result.error.message}</div>}
     <VegaVisual
         spec={vegaLiteSpec}
         data={result.data}
@@ -68,7 +66,13 @@ return <>
 Always pass `result.data` with `result.isCrossHighlightActive` from the same
 result; while refreshing or after a refresh error, both still describe the
 previous successful load. On `"refresh-error"`, keep the chart visible and show
-the error alongside it.
+the diagnostic alongside it, identifying retained tables as stale, using the
+[loading and failure guidance](query-factories.md#present-loading-and-failures).
+If a new baseline succeeds but its highlighted-subset query fails, the hook
+retains the entire previous result, not a new baseline combined with an old
+highlight. Never use the latest selection's highlight flag with retained data.
+Use the resolved `theme` from the host template without replacing its theme or
+auth bootstrap.
 
 With an active highlight, `VegaVisual` dims the baseline and draws the
 highlighted values on top; generated data labels stay on the baseline values.

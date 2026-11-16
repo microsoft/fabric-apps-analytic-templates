@@ -47,6 +47,17 @@ View our [Microsoft Learn documentation](https://learn.microsoft.com/fabric/apps
 </details>
 
 
+## Building workflow and validation
+
+Copilot builds, validates, and mounts visuals in batches suited to shared data
+and dependencies, including the initial batch. The app shell is mounted early;
+completed sections do not wait for unrelated queries or final app assembly.
+
+Script-based visual validation remains part of implementation. Unchanged
+factories do not need revalidation for layout-only edits. Unit tests and broader
+test suites are optional follow-ups, not required after every change.
+See [AGENTS.md](AGENTS.md#visual-validation) for the workflow.
+
 ## Need help?
 
 If you have any questions or run into any problems, please [file an issue](../../issues) on this repository.

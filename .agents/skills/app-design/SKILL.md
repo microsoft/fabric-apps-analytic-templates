@@ -12,7 +12,10 @@ Your job is to build cohesive, distinctive apps — not just correct ones. Add c
 
 ## Aesthetic Direction
 
-Before building anything, decide the app's tone in one word and its signature detail — the one thing someone notices first. These two choices guide every decision that follows. Pick a tone that is specific and bold, not safe or generic. Examples like editorial, geometric, organic, industrial, playful, or minimal are starting points — don't limit yourself to these. Invent a direction that fits the app's purpose.
+Choose an initial tone and signature detail early, then refine them as real data
+reveals the layout's needs. These choices should guide building, not delay the
+first visible shell. Pick a specific direction that fits the app's purpose:
+editorial, geometric, organic, industrial, playful, or minimal are starting points.
 
 Then match your execution to your direction — a maximalist direction needs layered effects and rich detail in the code; a minimalist direction needs precise spacing, restraint, and careful typography. Elegance comes from committing to the direction fully, not from adding more.
 
@@ -24,16 +27,19 @@ Load fonts via Google Fonts (or another CDN) as `<link>` tags in `index.html`, i
 
 Style the primary page heading with `font-page-title text-page-title text-emphasis-foreground` and its subtitle with `font-page-subtitle text-page-subtitle`.
 
-Customize semantic typography through its tokens in `global.css`, rather than overriding font family, size, or weight on individual elements.
+Customize semantic typography through its tokens in `global.css`, rather than overriding font family, size, or weight on individual elements. The semantic font-size tokens `--text-page-title`, `--text-page-subtitle`, `--text-visual-title`, `--text-visual-subtitle`, and `--text-data-label` must resolve to fixed `px` values, directly or through simple `var(--token)` references. Do not use CSS expressions such as `clamp()` or `calc()`, or relative units, for these tokens or their references.
 
 ### Theming Workflow
 
-Start by customizing `src/global.css` — this is the single source of truth for the app's visual identity. Every component uses these tokens, so setting them first means the entire UI shifts together.
+Use `src/global.css` as the single source of truth for the app's visual identity.
+Mount the initial shell with existing tokens if needed, then customize the
+shared theme as the initial visual batch takes shape. Do not postpone visible
+progress until all queries or theme decisions are finished.
 
 1. **Colors**: Customize the semantic color tokens (`--color-brand`, `--color-background`, `--color-card`, `--color-border`, etc.) in their existing blocks and corresponding `.dark` overrides. The defaults are neutral blue/grey — make them yours.
 2. **Radius**: Adjust `--radius` (the base radius) and the radius scale to match the tone — sharp/geometric (lower values), soft/rounded (higher values), or pill-shaped (`--radius-full`).
 3. **Fonts**: Update the font family tokens as described in the Typography section above.
-4. **Then build components.** Focus component-level styling on layout, spacing, and element-specific details — not re-specifying colors and radii that the tokens already handle.
+4. **Build in slices.** Mount validated visuals in batches suited to shared data and dependencies, including the initial batch. Reuse the shared theme and component patterns rather than redesigning them per visual. Focus component-level styling on layout, spacing, and element-specific details.
 5. **Selective overrides last.** After the base theme is in place, inspect and adjust individual components that need to deviate — an accent-colored card border, a button with a unique hover effect, etc.
 
 ---
@@ -45,13 +51,19 @@ Keep these principles in mind:
 - Keep spacing consistent — use the spacing tokens from the theme rather than arbitrary values.
 - Ensure all interactive elements are keyboard-accessible with visible focus indicators and appropriate disabled states.
 
-Read these reference files — they include "Make it yours" prompts that tie back to the aesthetic direction above:
-- [UI Style Recipes](references/ui-style-recipes.md) — per-element styling guidance for buttons, cards, inputs, dialogs, tabs, tooltips, tables, and more.
-- [Visual Style Recipes](references/visual-style-recipes.md) — chart theming, Vega-Lite config, dark mode chart support, and mark-specific styling.
+Consult only the relevant recipe sections when implementing those elements; do not read both files in full as a prerequisite:
+- [UI Style Recipes](references/ui-style-recipes.md) — buttons, cards, inputs, dialogs, tabs, tooltips, tables, and other UI elements.
+- [Visual Style Recipes](references/visual-style-recipes.md) — chart theming, Vega-Lite config, dark mode, and mark-specific styling.
 
 ---
 
 ## App Layout
+
+For a new app, replace the starter content early with a simple app shell.
+Label unfinished regions; do not invent KPI values or realistic-looking data
+marks. Use existing loading components rather than creating a placeholder system.
+Mount each validated batch as it becomes ready. On follow-up edits,
+preserve the established layout and theme unless the request changes them.
 
 These are good defaults for app structure. Adapt them to the specific app's needs.
 
@@ -79,7 +91,7 @@ The header/toolbar is part of the design language — not every app needs a trad
 
 Avoid uniform grids where every card is the same size — they look like a spreadsheet. Use mixed card spans to create useful visual hierarchy, with widths guided by the analytical task, data importance, data density, and label needs. Equal-size cards are appropriate when they support comparison.
 
-Review the complete row composition at each responsive breakpoint, including partial rows before full-width tables. When substantial space is unused, consider whether a neighboring chart would benefit from additional width within the dashboard wrapper. Dense line and area time series often benefit from more horizontal space to separate observations and time labels; for example, a dense intraday line chart could span the remaining columns beside a compact ranking chart.
+Plan the complete row composition at each responsive breakpoint, including partial rows before full-width tables. When substantial space is unused, consider whether a neighboring chart would benefit from additional width within the dashboard wrapper. Dense line and area time series often benefit from more horizontal space to separate observations and time labels; for example, a dense intraday line chart could span the remaining columns beside a compact ranking chart.
 
 Do not widen charts merely to fill space: preserve useful proportions for donuts, maps, and other aspect-sensitive visuals, and retain intentional whitespace where it serves the design. Judge the resulting layout by the readability of its marks and labels, not just how much space it occupies.
 
@@ -127,6 +139,8 @@ Examples:
 
 ---
 
-## Final Audit
+## Design review
 
-After assembling a layout, audit each element in its actual context — not in isolation. A component may look correct on its own but break the visual rhythm of the page. Check: Is every text legible? Are labels proportional to their controls? Are toolbar rows aligned on a shared edge? Do charts fill their containers? Do repeated elements (badges in tables, icons in lists) maintain appropriate visual weight for their density? Fix anything that fails.
+Consider legibility, label/control proportions, toolbar alignment, container
+sizing, and the visual weight of repeated elements while composing the layout.
+Follow AGENTS.md for required script validation and optional testing.

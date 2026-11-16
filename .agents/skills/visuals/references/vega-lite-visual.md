@@ -4,11 +4,11 @@ A React component from the `@microsoft/fabric-visuals` package for rendering Veg
 
 ```tsx
 import type { DataTable } from "@microsoft/fabric-visuals-core";
-import { useThemeContext } from "@/hooks/theme.context";
+import { useCssTheme } from "@microsoft/fabric-visuals";
 import { VegaVisual } from "@microsoft/fabric-visuals";
 import type { VisualizationSpec, VegaLiteConfig } from "@microsoft/fabric-visuals";
 
-const { theme } = useThemeContext();
+const theme = useCssTheme();
 
 const spec: VisualizationSpec = {
   $schema: "https://vega.github.io/schema/vega-lite/v6.json",

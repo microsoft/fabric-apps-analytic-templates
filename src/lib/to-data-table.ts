@@ -5,8 +5,23 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import type { ColumnDef, DataTable } from "@microsoft/fabric-visuals-core";
-import type { QueryColumn, QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
+import type { ColumnDef, DataTable } from '@microsoft/fabric-visuals-core';
+
+/**
+ * The shape `toDataTable` reads from a query result: a raw table, before column
+ * metadata is merged in.
+ *
+ * Composed from the `visuals-core` types rather than re-declaring their fields,
+ * and narrowed to `name` because that is the only column property this reads -
+ * everything else comes from `columnMetadata`. Declared here rather than
+ * imported from `@microsoft/rayfin-connector-fabric-semanticmodel` so charting
+ * does not drag the semantic-model connector in; that package's `QueryTable`
+ * satisfies this structurally.
+ */
+export interface QueryTableLike {
+    columns: readonly Pick<ColumnDef, 'name'>[];
+    rows: DataTable['rows'];
+}
 
 /**
  * Dictionary keyed by the original column name from the DAX query result.
@@ -34,11 +49,8 @@ export interface RollupDataTableOptions {
  * @returns A `DataTable` with enriched `ColumnDef` entries and the original rows.
  *
  * @remarks
- * `rows` is passed through by reference, and every result the query layer
- * returns is frozen (see `src/lib/query-cache.ts`), so a later cache hit cannot
- * be corrupted by an earlier caller. Derive a new array —
- * `[...rows].sort(...)` — rather than sorting or otherwise mutating in place,
- * which throws in strict mode.
+ * `rows` is passed through by reference. Treat results as immutable and derive
+ * a new array with `[...rows].sort(...)` rather than mutating in place.
  *
  * @example
  * ```tsx
@@ -54,7 +66,7 @@ export interface RollupDataTableOptions {
  * ```
  */
 export function toDataTable(
-    queryTable: QueryTable,
+    queryTable: QueryTableLike,
     columnMetadata: ColumnMetadataMap,
 ): DataTable {
     const columns: ColumnDef[] = queryTable.columns.map((col) => {
@@ -69,11 +81,11 @@ export function toDataTable(
  * Rollup flags and other internal query columns are removed from emitted tables.
  */
 export function toRollupDataTables(
-    queryTable: QueryTable,
+    queryTable: QueryTableLike,
     columnMetadata: ColumnMetadataMap,
     options: RollupDataTableOptions,
 ): RollupDataTables {
-    const partition: RollupPartition<QueryColumn> = partitionRollupRows(
+    const partition: RollupPartition<Pick<ColumnDef, "name">> = partitionRollupRows(
         queryTable.columns,
         queryTable.rows,
         options,
@@ -109,7 +121,7 @@ export function splitRollupDataTable(
         dataTable.rows,
         options,
     );
-    
+
     return {
         bodyTable: { columns: partition.outputColumns, rows: partition.bodyRows },
         grandTotalTable: {

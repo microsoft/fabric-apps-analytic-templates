@@ -13,7 +13,7 @@ When a component needs data at multiple grains, return each metric at the grain 
 
 ## File organization
 
-Follow the template’s [Query and spec organization](../../../../AGENTS.md#query-and-spec-organization) conventions.
+Follow the frontend-relative `src/queries/<page>/` factory organization described in analytics.
 
 - **DataGrid body and grand total:** Use one `.dax` file and one factory. The query returns both as flagged rows.
 - **Independent datasets:** Use one `.dax` file and factory per result table. Keep the shared Vega-Lite spec with the primary visualization factory and re-export every factory through the appropriate barrel.
@@ -92,7 +92,7 @@ ORDER BY
 
 `_BodyFilter` is a regular `SUMMARIZECOLUMNS` filter, so it constrains both body and grand-total evaluation. Add one variable per application or page filter and pass each one as a `SUMMARIZECOLUMNS` filter argument.
 
-DataGrid filtering is enabled by default. Extend this scaffold with the visual-interactivity skill's [filter-aware grid totals](../../visual-interactivity/references/filter-aware-grid-totals.md) pattern so local grid filters update the provided total without removing body rows needed for client-side filtering.
+DataGrid filtering is enabled by default. Extend this scaffold with [filter-aware grid totals](../../visual-interactivity/references/filter-aware-grid-totals.md) so local grid filters update the provided total without removing body rows needed for client-side filtering.
 
 `_ResultLimit` adds one slot only when the grand-total row exists. `TOPN` ranks that row first internally so it survives the limit while returning no more than `_MaxBodyRows` body rows. Because `TOPN` does not guarantee output order, the final `ORDER BY` makes body-row order deterministic for testing and debugging; DataGrid still owns user-facing sorting. Include every body dimension after the metric in both sort lists to break ties deterministically.
 
@@ -102,7 +102,7 @@ Copy the semantic model's format strings into the query factory's `columnMetadat
 
 ```typescript
 const columnMetadata: ColumnMetadataMap = {
-  "'Region'[Name]": { name: "RegionName", displayName: "Region" },
+  "Region[Name]": { name: "RegionName", displayName: "Region" },
   "[Revenue]": { name: "Revenue", displayName: "Revenue", format: "$#,##0.00" },
   "[Customer Count]": { name: "Customer Count", displayName: "Customer Count", format: "#,##0" },
 };
@@ -112,7 +112,7 @@ Test the query with `npx fabric-app-semantic-model-tools run-dax-query --dax <fi
 
 ## Rendering in DataGrid
 
-DataGrid filtering is enabled by default. Follow the visual-interactivity skill's [component wiring](../../visual-interactivity/references/filter-aware-grid-totals.md#component-wiring) to derive the rollup query from grid filter state, split its result with `toRollupDataTables()`, and connect `onFilterChange`.
+DataGrid filtering is enabled by default. Follow [component wiring](../../visual-interactivity/references/filter-aware-grid-totals.md#component-wiring) to derive the rollup query from grid filter state, split its result with `toRollupDataTables()`, and connect `onFilterChange`.
 
 `toRollupDataTables()` treats rows where all configured rollup flags are `FALSE` as body rows and rows where all flags are `TRUE` as the provided grand total. It rejects multiple grand-total rows and intermediate subtotal rows until DataGrid has an explicit subtotal API. The array-based flag contract leaves room to classify additional rollup levels when that support is added.
 
@@ -122,7 +122,7 @@ DataGrid owns grand-total rendering; do not append the total to body rows or use
 
 ## Independent query organization and wiring
 
-Use separate queries when a consumer needs independently shaped result tables rather than classified rows from one shared result. Give each result its own `.dax` file and factory output (`connection`, `query`, and `columnMetadata`), and keep the shared Vega-Lite spec with the visualization factory. Follow the template's [Query and spec organization](../../../../AGENTS.md#query-and-spec-organization) conventions for file names, variants, and barrel exports.
+Use separate queries when a consumer needs independently shaped result tables rather than classified rows from one shared result. Give each result its own `.dax` file and factory output (`connection`, `query`, and `columnMetadata`), and keep the shared Vega-Lite spec with the visualization factory. Use matching kebab-case file names, structural variants and barrel exports under frontend-relative `src/queries/<page>/`.
 
 Call each factory with the same shared inputs, then execute each returned query with its own hook call:
 
@@ -140,7 +140,7 @@ const summary = useSemanticModelQuery({
 });
 ```
 
-Each `useSemanticModelQuery` invocation is a separate SDK round trip with its own cache, loading state, and error state. When the tables form a matched set, replace the rendered set only after every request has succeeded and none is still loading; surface a failure from any request instead of combining fresh and stale results.
+Each `useSemanticModelQuery` invocation has its own loading and error state. Caching and request coalescing are template-specific; do not assume each hook owns a separate cache or causes a separate SDK round trip. When the tables form a matched set, replace the rendered set only after every request has succeeded and none is still loading; surface a failure from any request instead of combining fresh and stale results.
 
 ## Rendering in VegaVisual
 
@@ -159,7 +159,7 @@ const summaryTable = toDataTable(summary.data.table, summaryConfig.columnMetadat
 />
 ```
 
-See the visuals skill's [multi-data input](../../visuals/references/multi-data-input.md) reference for named dataset binding, overlays, reference lines, axis spines, and compatible field contracts. For a baseline plus selected-subset overlay, follow the visual-interactivity skill's [Highlight queries](../../visual-interactivity/references/highlight-queries.md) for query generation and synchronization.
+See the visuals skill's [multi-data input](../../visuals/references/multi-data-input.md) reference for named dataset binding, overlays, reference lines, axis spines, and compatible field contracts. For a baseline plus selected-subset overlay, follow [Highlight queries](../../visual-interactivity/references/highlight-queries.md) for query generation and synchronization.
 
 ## Consistency rules
 

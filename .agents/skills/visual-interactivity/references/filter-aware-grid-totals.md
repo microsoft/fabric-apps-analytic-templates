@@ -93,4 +93,9 @@ const { bodyTable, grandTotalTable } = splitRollupDataTable(result.data, {
 });
 ```
 
-Render `DataGrid` with `bodyTable`, `grandTotals.data`, and `onFilterChange` as above, adding the source props when the grid is also a source. During `"refreshing"` or `"refresh-error"`, `result.data` keeps the previous body and total together. On `"refresh-error"`, keep the grid visible and render `result.error.message` in an alert alongside it.
+Render `DataGrid` with `bodyTable`, `grandTotals.data`, and `onFilterChange` as
+above, adding the source props when the grid is also a source. During
+`"refreshing"` or `"refresh-error"`, `result.data` keeps the previous body and
+total together. On `"refresh-error"`, keep the grid visible and render
+`result.error.message` in an alert alongside it. Label the retained tables as
+stale. An `"error"` has no prior tables.

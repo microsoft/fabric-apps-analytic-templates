@@ -134,7 +134,7 @@ const result = useManagedInteractionTarget("topCategories", loadData);
 ```
 
 Memoize the loader and list its app inputs as dependencies; each new loader
-identity starts a new load. `executeQueryFactory` uses the same cache and errors
+identity starts a new load. `executeQueryFactory` uses the same execution and errors
 as `useQueryFactoryTarget`; do not call React query hooks from a loader.
 
 The key mapping uses the target query's result aliases. Map every tuple key to its physical model column. Do not infer model identifiers

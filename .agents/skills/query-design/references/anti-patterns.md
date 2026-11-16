@@ -33,7 +33,7 @@ EVALUATE
 ```typescript
 // ✅ Factory metadata: DataGrid computed totals currently support only sum and count
 export const columnMetadata: ColumnMetadataMap = {
-  "'Region'[Name]": { name: "RegionName", displayName: "Region" },
+  "Region[Name]": { name: "RegionName", displayName: "Region" },
   "[Revenue]": {
     name: "Revenue",
     displayName: "Revenue",
@@ -77,7 +77,7 @@ ORDER BY 'Calendar'[Month]
 ```typescript
 // ✅ Factory file: declare format in metadata (VBA/ECMA-376 format string)
 export const columnMetadata: ColumnMetadataMap = {
-  "'Calendar'[Month]": { name: "CalendarMonth", displayName: "Month" },
+  "Calendar[Month]": { name: "CalendarMonth", displayName: "Month" },
   "[Revenue]":         { name: "Revenue", displayName: "Revenue", format: "$#,##0.00" },
 };
 ```
@@ -222,8 +222,8 @@ ORDER BY 'Region'[Region Name], 'Product'[Category]
 ```typescript
 // ✅ Factory file: columnMetadata maps query schema → presentation
 export const columnMetadata: ColumnMetadataMap = {
-  "'Region'[Region Name]": { name: "RegionRegion Name", displayName: "Region" },
-  "'Product'[Category]":   { name: "ProductCategory",   displayName: "Category" },
+  "Region[Region Name]": { name: "RegionName", displayName: "Region" },
+  "Product[Category]":   { name: "ProductCategory", displayName: "Category" },
   "[Total Revenue]":       { name: "Total Revenue",     displayName: "Revenue", format: "$#,##0.00" },
 };
 ```
