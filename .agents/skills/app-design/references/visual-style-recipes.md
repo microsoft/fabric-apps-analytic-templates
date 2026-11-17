@@ -11,16 +11,6 @@ Styling guidance for chart and data grid visuals — theming, dark mode, layout,
 
 ## Theming
 
-### How theming works
-
-All visual styling flows from CSS custom properties defined in `src/global.css`. Visual components read these variables at runtime — edit `global.css` to theme everything.
-
-- **Light mode** values go in the `@theme` block
-- **Dark mode** overrides go in the `.dark` block
-- Changes cascade automatically to all charts and grids
-
-See the `formatting.md` reference for the full list of CSS variables and how to change them.
-
 ### Chart typography alignment
 
 Align chart text styling with the app's current theme and typography direction. Use chart font family, weight, and size settings consistent with the app's token-driven type system.

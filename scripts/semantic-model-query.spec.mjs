@@ -17,12 +17,12 @@ import { promisify } from 'node:util';
 import { tableFromArrays, tableToIPC } from 'apache-arrow';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { acquireRayfinCliLock, withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
-import { getRayfinAuth } from '@microsoft/rayfin-cli/auth';
+import { getRayfinAuth } from '@microsoft/rayfin-cli/_internal/auth';
 
 import { createQueryExecutor, readRayfinConnectors, toQueryTable } from './semantic-model-query.mjs';
 
 // The saved Rayfin login is stood in for; the real Rayfin CLI lock is observed.
-vi.mock('@microsoft/rayfin-cli/auth', () => ({ getRayfinAuth: vi.fn(), loadAuthState: vi.fn() }));
+vi.mock('@microsoft/rayfin-cli/_internal/auth', () => ({ getRayfinAuth: vi.fn(), loadAuthState: vi.fn() }));
 vi.mock('@microsoft/fabric-app-semantic-model-tools/connector', async (importOriginal) => {
     const actual = await importOriginal();
     return { ...actual, withRayfinCliLock: vi.fn(actual.withRayfinCliLock) };
@@ -30,8 +30,7 @@ vi.mock('@microsoft/fabric-app-semantic-model-tools/connector', async (importOri
 
 const workspaceId = '11111111-1111-4111-8111-111111111111';
 const itemId = '22222222-2222-4222-8222-222222222222';
-const queryUrl = 'https://api.fabric.microsoft.com/v1.0/myorg/groups/'
-    + `${workspaceId}/datasets/${itemId}/executeDaxQueries`;
+const queryUrl = `https://api.fabric.microsoft.com/v1.0/myorg/datasets/${itemId}/executeDaxQueries`;
 const powerBiScope = 'https://analysis.windows.net/powerbi/api/.default';
 const salesConnector = [
     '  - name: sales',

@@ -123,6 +123,34 @@ The target loads on mount and reloads when its factory inputs or interactions
 affecting it change. Keep the factory function stable unless changing it is
 intended to reload the target.
 
+### Shared cached queries
+
+Skip `selectColumns` when the query already returns only the columns the visual
+needs, including tooltip fields. For a broader shared cached query, trim each
+target's result in a custom loader registered with `useManagedInteractionTarget`.
+
+Select after `executeQueryFactory`, before alignment, using the same columns
+for baseline, highlight, and non-highlight loads.
+
+For a shared query returning `Geography`, `Harvest`, and `HunterDays`, where the
+visual uses only `Geography` and `Harvest`:
+
+```ts
+import { selectColumns } from "@microsoft/fabric-visuals-core";
+import type { DataTable } from "@microsoft/fabric-visuals-core";
+import { executeQueryFactory } from "@/lib/query-factory";
+import { geographyHarvest } from "@/queries";
+
+async function loadRankingTable(
+    interactionFilters: readonly string[],
+): Promise<DataTable> {
+    const queryResult: DataTable = await executeQueryFactory(
+        geographyHarvest({ interactionFilters }),
+    );
+    return selectColumns(queryResult, ["Geography", "Harvest"]);
+}
+```
+
 ### Query execution and load states
 
 The hook uses `useManagedInteractionTarget` to manage loading and retain

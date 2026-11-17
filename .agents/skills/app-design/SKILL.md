@@ -36,7 +36,7 @@ Mount the initial shell with existing tokens if needed, then customize the
 shared theme as the initial visual batch takes shape. Do not postpone visible
 progress until all queries or theme decisions are finished.
 
-1. **Colors**: Customize the semantic color tokens (`--color-brand`, `--color-background`, `--color-card`, `--color-border`, etc.) in their existing blocks and corresponding `.dark` overrides. The defaults are neutral blue/grey — make them yours.
+1. **Colors**: Customize the semantic color tokens in `src/global.css` and their `.dark` overrides. Customize chart colors separately using the [chart color guidance](../visuals/references/formatting.md#categorical-color-palette).
 2. **Radius**: Adjust `--radius` (the base radius) and the radius scale to match the tone — sharp/geometric (lower values), soft/rounded (higher values), or pill-shaped (`--radius-full`).
 3. **Fonts**: Update the font family tokens as described in the Typography section above.
 4. **Build in slices.** Mount validated visuals in batches suited to shared data and dependencies, including the initial batch. Reuse the shared theme and component patterns rather than redesigning them per visual. Focus component-level styling on layout, spacing, and element-specific details.
@@ -105,6 +105,8 @@ Every component that depends on async data should handle all three states:
 | **Empty** | A centered muted message explaining no data is available |
 | **Error** | A destructive-styled banner with the error message |
 
+When keeping a chart visible during refresh, show loading or error notices without changing the space allocated to the chart, such as with an overlay. Adding a normal-flow notice beside a full-height chart can create a resize feedback loop that makes the chart grow repeatedly.
+
 ### Dark Mode
 
 Include a light/dark mode toggle in the app header or toolbar. Use the `useAppTheme` hook from `@/hooks/use-theme` to read and toggle the theme.
@@ -121,7 +123,7 @@ Include a light/dark mode toggle in the app header or toolbar. Use the `useAppTh
 
 ### UI Token Rules
 
-All styling must use the design tokens defined in `src/global.css` via Tailwind utility classes. Never hardcode raw color values, pixel sizes, or font stacks — raw values are only permitted in `global.css`. Refer to `global.css` for available tokens, their values, and expected usage.
+All styling must use the design tokens defined in `src/global.css` via Tailwind utility classes. Never hardcode raw color values, pixel sizes, or font stacks — raw values are only permitted in `global.css`. Derive component-specific colors from existing semantic color tokens with `var()` or `color-mix()`, rather than adding independent fixed-color tokens. Refer to `global.css` for available tokens, their values, and expected usage.
 
 Examples:
 - `bg-brand text-on-brand` — not `bg-blue-600 text-white`

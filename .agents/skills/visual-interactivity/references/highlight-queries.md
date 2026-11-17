@@ -28,9 +28,10 @@ When writing the alignment:
   identifiers. Alignment uses raw key values; never substitute localized display
   labels. A series field requires alignment by both category and series.
 - Alignment throws on duplicate tuples and on subset tuples outside the baseline.
-- In `missingMeasureReplacementValues`, give each measure the value for a baseline
-  group absent from the subset: `0` when absence means zero, as for sums and
-  counts, or `null` to keep BLANK, as for ratios.
+- In `missingMeasureReplacementValues`, include every measure returned by the
+  query, including tooltip-only measures. Any omitted column must stay unchanged
+  between baseline and highlight results. Use `0` when a missing group means zero,
+  as for sums and counts, or `null` to keep BLANK, as for ratios.
 - List the measures the chart draws in `plottedMeasureFields`.
 
 For Top N, do not rerun the ranking under highlight filters; see
