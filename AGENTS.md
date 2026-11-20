@@ -42,7 +42,7 @@ npx rayfin connector list
 
 `connector add` installs that skill during the session, and Copilot CLI registers only the skills it finds at session start. If you do need it and `rayfin-connectors` is not listed as available, read `.agents/skills/rayfin-connectors/SKILL.md` directly (following any link); do not invoke an unlisted skill or retry a skill-not-found error, and if the file is missing, report the installation problem.
 
-The app client is already wired, so skip the skill's steps for it (constructing `ConnectorsRayfinClient`, `AppConnectorsSchema`, or a connector runtime map). `src/lib/rayfin-client.ts` builds the client, and `connector add` and `connector remove` rewrite the part of `src/lib/connectors.ts` below its `@generated` line, so each registered connector's config and runtime are wired together. Don't edit that part by hand. The template already depends on the connector packages, so skip the `npm install` that `connector add` prints.
+The app client is already wired, so skip the skill's steps for it (constructing `RayfinClient.create` with registered services, `AppConnectorsSchema`, or a connector runtime map). `src/lib/rayfin-client.ts` builds the client, and `connector add` and `connector remove` rewrite the part of `src/lib/connectors.ts` below its `@generated` line, so each registered connector's config and runtime are wired together. Don't edit that part by hand. The template already depends on the connector packages, so skip the `npm install` that `connector add` prints.
 
 Never guess ids; take them from `search` output or a URL the user gave you. Local `.pbix` files are not supported — only models published to the Power BI Service. A `401 GroupNotAccessible` after a successful `search` means you lack query access to that workspace, not that your session expired; check `npx rayfin login status` before re-running `npx rayfin login`.
 
@@ -169,7 +169,7 @@ for tests, follow these conventions:
 ## Critical rules
 
 1. **Never use mock, fake, or hardcoded data.** All data must come from a real source.
-2. **Never persist user data beyond the session or store credentials/PII.** Fetch on demand from the real source; the only allowed in-memory data store is the shipped session-lifetime app query cache in `src/lib/query-cache.ts`.
+2. **Never store credentials/PII.** Fetch on demand from the real source; the only allowed in-memory data store is the shipped session-lifetime app query cache in `src/lib/query-cache.ts`.
 3. **Do not assume or silently add a data source.** Confirm the source with the user and never supplement it without explicit consent.
 4. **Never guess query result schema.** Run the query first with `npx fabric-app-semantic-model-tools run-dax-query --dax <file.dax> --alias <connector>` and use its exact output names as `columnMetadata` keys.
 5. **Do not ask the user to describe the schema.** Query the cached catalog with `npx fabric-app-semantic-model-tools query-schema`.

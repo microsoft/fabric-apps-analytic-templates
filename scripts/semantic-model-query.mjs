@@ -10,7 +10,7 @@ import { join, resolve } from 'node:path';
 import { parseEnv } from 'node:util';
 
 import { resolveProjectRoots, withRayfinCliLock } from '@microsoft/fabric-app-semantic-model-tools/connector';
-import { getRayfinAuth, loadAuthState } from '@microsoft/rayfin-cli/auth';
+import { getRayfinAuth, loadAuthState } from '@microsoft/rayfin-cli/_internal/auth';
 import { fabricSemanticModel, resolveTarget } from '@microsoft/rayfin-connector-fabric-semanticmodel';
 import { createConnectorsApi } from '@microsoft/rayfin-connectors';
 import { ApiClient } from '@microsoft/rayfin-lib';

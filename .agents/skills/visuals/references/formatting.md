@@ -18,6 +18,7 @@ Formats defined in `columnMetadata` are auto-applied by `VegaVisual` to axes, le
 - When a legend is present, always use color encoding.
 - **Theme-aware colors**: For ordinary categorical color encodings, omit `scale.range`, `scale.scheme`, and fixed color values so Vega uses the palette supplied by the global theme.
 - **Stable category mapping**: To keep category colors consistent across visuals, discover the distinct values and set `scale.domain` only. The theme palette supplies the range.
+- **Matching UI colors**: Use the corresponding `--color-data-*` tokens directly or through aliases. Derive category-linked tints and interaction states from those tokens rather than hardcoding separate colors, so they follow palette and theme changes.
 - **Intentional fixed colors**: Use color overrides only when colors have intrinsic semantic meaning (for example, increase/decrease/subtotal) or when the user explicitly requests them. These overrides replace the theme palette.
 
 ### Categorical Color Palette
